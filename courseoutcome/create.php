@@ -30,32 +30,32 @@ require(dirname(dirname(__FILE__)) . '/init.php');
 require_once('pieforms/pieform.php');
 require_once('courseoutcome.php');
 
-$outcome_id = param_integer('outcome',0);
+$courseoutcome_id = param_integer('courseoutcome',0);
 $offset = param_integer('offset',0);
 
-if (!can_create_outcomes()) {
+if (!can_create_courseoutcomes()) {
     throw new AccessDeniedException(get_string('accessdenied', 'error'));
 }
 
-$outcomedes = is_outcome_available($outcome_id);
+$courseoutcomedes = is_courseoutcome_available($courseoutcome_id);
 
-if (!$outcomedes) {
-    throw new AccessDeniedException("Outcome does not exist");
+if (!$courseoutcomedes) {
+    throw new AccessDeniedException("Course Outcome does not exist");
 }
 
-if($outcome_id == 0){
+if($courseoutcome_id == 0){
 	define('MENUITEM', 'courseoutcomes/courseoutcomes');
-	define('TITLE', 'Create Outcome');
+	define('TITLE', 'Create Course Outcome');
 }else{
-	define('MENUITEM', 'courseoutcomes/suboutcomes');
-	define('TITLE', $outcomedes->outcome_name);
+	define('MENUITEM', 'courseoutcomes/subcourseoutcomes');
+	define('TITLE', $courseoutcomedes->courseoutcome_name);
 }
 
 $assesstype = array();
 $assesstype['Level'] = 'Levels';
 $assesstype['Meets/Does not meet'] = 'Meets/Does not meet';
 
-$degprograms = @get_records_sql_array(
+$degcourses = @get_records_sql_array(
 	'SELECT id, degree_name
 		FROM {degree_courses}',
 	array()
@@ -64,67 +64,122 @@ $degprograms = @get_records_sql_array(
 $courses = array();
 $courses['Course'] = 'Select a course';
 foreach($degcourses as $course){
-	$courses[$course->id] = $course->degree_name;
+	$course[$course->id] = $course->degree_name;
 }
 
-$createoutcome = array(
-    'name'     => 'createoutcome',
+$createcourseoutcome = array(
+    'name'     => 'createcourseoutcome',
     'method'   => 'post',
     'elements' => array(),
 );
-
-	 $createoutcome['elements']['name'] = array(
+        $createcourseoutcome['elements']['name'] = array(
             'type'         => 'text',
-            'title'        => 'Outcome Name',
+            'title'        => 'Course Outcome Name',
         );
-        $createoutcome['elements']['description'] = array(
+        $createcourseoutcome['elements']['description'] = array(
             'type'         => 'wysiwyg',
-            'title'        => 'Outcome Description',
+            'title'        => 'Course Outcome Description',
             'rows'         => 10,
             'cols'         => 55,
         );
-		
-if($outcome_id == 0){
+
+if($courseoutcome_id == 0){
 	$disable = 0;
 	$default = '';
 }else{
 	$disable = 1;
-	$default = $outcomedes->degree_id;
+	$default = $courseoutcomedes->degree_id;
 }
-       $createoutcome['elements']['degree'] = array(
+       $createcourseoutcome['elements']['degree'] = array(
             'type'         => 'select',
-            'title'        => 'Degree Course',
+            'title'        => 'Degree Program',
             'options'      => $courses,
 		'disabled' 	   => $disable,
 		'defaultvalue' => $default,
         );
-		
-		 $createoutcome['elements']['assesstype'] = array(
+
+        $createcourseoutcome['elements']['assesstype'] = array(
             'type'         => 'select',
             'title'        => 'Evaluation Type',
             'options'      => $assesstype,
             'defaultvalue' => 'Level',
         );
-		 $createoutcome['elements']['outcomeid'] = array(
+	  $createcourseoutcome['elements']['courseoutcomeid'] = array(
 		'type' => 'hidden',
-		'value' => $outcome_id,
+		'value' => $courseoutcome_id,
 	  );
-        $createoutcome['elements']['submit']   = array(
+        $createcourseoutcome['elements']['submit']   = array(
             'type'  => 'submitcancel',
             'value' => array('Save', 'Cancel'),
         );
-		
+
+$createcourseoutcome = pieform($createcourseoutcome);
+$smarty = smarty();
+$smarty->assign('createcourseoutcome', $createcourseoutcome);
+
+$smarty->assign('main_courseoutcome',$courseoutcomedes->main_courseoutcome);
+if($courseoutcome_id != 0){
+$smarty->assign('OUTCOMENAV', courseoutcome_get_menu_tabs($courseoutcome_id));
+$smarty->assign('PAGEHEADING', $courseoutcomedes->courseoutcome_name);
+$smarty->assign('header', 'Create Sub Course Outcome');
+}else{
+$smarty->assign('OUTCOMENAV','');
+$smarty->assign('PAGEHEADING', 'Create Course Outcome');
+}
+
+$smarty->display('courseoutcome/courseoutcomecreate.tpl');
+
+function createcourseoutcome_validate(Pieform $form, $values) {
+global $courseoutcome_id;
+ 	$errorval = '';
+   if($values['name'] == ''){
+	$errorval = "Course Outcome Name is mandatory";
+   }
+
+    if (get_field('courseoutcomes', 'id', 'degree_id', $values['degree'],'courseoutcome_name', $values['name'])) {
+		$errorval = 'Course Outcome already exists for this course';
+    }
+
+	if($errorval){
+ 	$form->set_error('name', $errorval);
+	}else {
+   	if($courseoutcome_id == 0 && $_POST['degree'] == "Program"){
+	$err = 'Please select a course';
+	$form->set_error('degree',$err);
+  	}
+	}
+}
+
+function createcourseoutcome_cancel_submit(Pieform $form, $values) {
+global $offset;
+    redirect(get_config('wwwroot').'/courseoutcome/courseoutcomes.php?courseoutcome=' . $_POST['courseoutcomeid'] . '&offset=' . $offset);
+}
+
+function createcourseoutcome_submit(Pieform $form, $values) {
+   global $USER;
+    global $SESSION;
+global $offset,$courseoutcome_id, $courseoutcomedes;
+if($courseoutcome_id == 0){
+	$degree = $_POST['degree'];
+}else{
+	$degree = $courseoutcomedes->degree_id;
+}
+
+$str= $_POST['description'];
+/*$desclen = strlen($desc);
+$str = substr($desc,3,$desclen-7);*/
+
 db_begin();
-$newoutcome = insert_record('courseoutcomes', (object)array('outcome_name' => $_POST['name'],'description' => $str, 'degree_id' => $degree, 'eval_type' => $_POST['assesstype'], 'main_outcome' => $_POST['outcomeid'], 'deleted' => 0),'id',true);
+$newcourseoutcome = insert_record('courseoutcomes', (object)array('courseoutcome_name' => $_POST['name'],'description' => $str, 'degree_id' => $degree, 'eval_type' => $_POST['assesstype'], 'main_courseoutcome' => $_POST['courseoutcomeid'], 'deleted' => 0),'id',true);
 db_commit();
 
 
-    $SESSION->add_ok_msg('Outcome Saved');
+    $SESSION->add_ok_msg('Course Outcome Saved');
 
    if($_POST['assesstype'] == 'Level'){
-    redirect(get_config('wwwroot').'courseoutcome/edit.php?outcome=' . $newoutcome. '&main_offset=' . $offset);
+    redirect(get_config('wwwroot').'courseoutcome/edit.php?courseoutcome=' . $newcourseoutcome. '&main_offset=' . $offset);
    }else{
-    redirect(get_config('wwwroot').'/courseoutcome/courseoutcomes.php?outcome=' . $_POST['outcomeid']. '&offset=' . $offset);
+    redirect(get_config('wwwroot').'/courseoutcome/courseoutcomes.php?courseoutcome=' . $_POST['courseoutcomeid']. '&offset=' . $offset);
    }
 
 }
