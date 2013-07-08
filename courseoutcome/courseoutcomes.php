@@ -25,219 +25,98 @@
  *
  */
 
-defined('INTERNAL') || die();
+define('INTERNAL', 1);
+define('PUBLIC', 1);
+require(dirname(dirname(__FILE__)) . '/init.php');
+require_once('pieforms/pieform.php');
+require('courseoutcome.php');
+define('SECTION_PLUGINTYPE', 'core');
+define('SECTION_PLUGINNAME', 'group');
+define('SECTION_PAGE', 'courseoutcomes');
+$offset = param_integer('offset', 'all');
 
-//Outcome related functions
-/*
- * Create , update or delete courseoutcome
-*/
+$courseoutcome_id = param_integer('courseoutcome',0);
 
-/**
- * Sets up groups for display in mygroups.php and find.php
- *
- * @param array $groups    Initial group data, including the current user's 
- *                         membership type in each group. See mygroups.php for
- *                         the query to build this information.
- * @param string $returnto Where forms generated for display should be told to return to
- */
+$course_id = param_integer('course',0);
 
-function is_courseoutcome_available($courseoutcomeid) {
-$outrec = get_record('courseoutcomes','id',$courseoutcomeid);
-if(!$outrec || $outrec->deleted == 1){
-	$notfound = array();
-	return $notfound;
+if(!$USER->get('staff') && !$USER->get('admin')){
+	$usr_rec = get_record('usr','id',$USER->get('id'));
+	if (!$usr_rec->degree_id) {
+    		throw new AccessDeniedException("Not a valid degree course");
+	}
+	$course_id = $usr_rec->degree_id;
+}
+
+if($courseoutcome_id == 0){
+define('MENUITEM', 'courseoutcomes/coursecourseoutcomes');
+define('TITLE', 'Course Outcomes ');
+
+if($course_id == 0){
+	$listcourseoutcomes = 0;
 }else{
-	return $outrec;
+	$course_rec = get_record('degree_courses','id',$course_id);
+	if (!$course_rec) {
+    		throw new AccessDeniedException("Not a valid degree course");
+	}
+	$listcourseoutcomes = 1;
 }
-
-}
-
-function is_rubric_available($rubricid) {
-$rubrec = get_record('rubrics','id',$rubricid);
-if(!$rubrec || $rubrec->deleted == 1){
-	$notfound = array();
-	return $notfound;
 }else{
-	return $rubrec;
+
+$listcourseoutcomes = 1;
+$courseoutcomedes = is_courseoutcome_available($courseoutcome_id);
+
+if (!$courseoutcomedes) {
+    throw new AccessDeniedException("Course Outcomes does not exist");
 }
 
+define('MENUITEM', 'courseoutcomes/subcourseoutcomes');
+define('TITLE', $courseoutcomedes->courseoutcome_name);
 }
 
-function can_create_courseoutcomes() {
-    global $USER;
-    if ($USER->get('admin') || $USER->is_institutional_admin()) {
-        return true;
-    }
-    return false;
-}
+$smarty = smarty();
+if($listcourseoutcomes){
+$courseoutcomesperpage = 20;
+$offset = (int)($offset / $courseoutcomeserpage) * $courseoutcomesperpage;
 
+$results = get_courseoutcomes($courseoutcomesperpage, $offset, $courseoutcome_id, (int)$course_id);
 
-function get_courseoutcomes($limit=20, $offset=0, $courseoutcomeid=0, $course=0) {
+$pagination = build_pagination(array(
+    'url' => get_config('wwwroot') . 'courseoutcome/courseoutcomes.php?courseoutcome=' . $courseoutcome_id,
+    'count' => $results['count'],
+    'limit' => $courseoutcomesperpage,
+    'offset' => $offset,
+    'resultcounttextsingular' => 'courseoutcome',
+    'resultcounttextplural' => 'courseoutcomes',
+));
 
-    if(!$courseoutcomeid){
-	$courseoutcomeid = 0;
-    }
-    if($course == 0){
-    $sql = 'SELECT *
-		    FROM {courseoutcomes}
-		    WHERE main_courseoutcome = ?
-		    AND deleted != 1
-		    ORDER BY courseoutcome_name';
-	$values = array($courseoutcomeid);
-    }else{
-    $sql = 'SELECT *
-		    FROM {courseoutcomes}
-		    WHERE main_courseoutcome = ?
-		    AND degree_id = ?
-		    AND deleted != 1
-		    ORDER BY courseoutcome_name';
-	$values = array($courseoutcomeid, $course);
-    }
-    
-    $courseoutcomes = get_records_sql_assoc($sql, $values, $offset, $limit);
-    
- $count = count_records_sql('SELECT COUNT(*) FROM {courseoutcomes} WHERE main_courseoutcome = ? and deleted != 1', $values);
-
-    if (!$courseoutcomes) {
-        $courseoutcomes = array();
-    }
-
-    return array('courseoutcomes' => $courseoutcomes, 'count' => $count);
-
-}
-
-
-function get_rubrics($limit=20, $offset=0, $courseoutcomeid=0) {
-
-    if(!$courseoutcomeid){
-	$courseoutcomeid = 0;
-    }
-    
-    $values = array($courseoutcomeid);
-    $rubrics =  @get_records_sql_array(
-	'SELECT *
-		FROM {rubrics}
-		WHERE courseoutcome_id = ?
-		AND deleted != 1
-		LIMIT ?,?',
-	array($courseoutcomeid,$offset,$limit)
-    );
-    
- $count = count_records_sql('SELECT COUNT(*) FROM {rubrics} WHERE courseoutcome_id = ? AND deleted != 1', $values);
-
-    if (!$courseoutcomes) {
-        $courseoutcomes = array();
-    }
-
-    return array('rubrics' => $rubrics, 'count' => $count);
-
-}
-
-function get_courseoutcome_levels($offset=0, $limit=4, $courseoutcomeid, $rubric_no) {
-
-$sql = 'SELECT *
-	  FROM {courseoutcome_levels} 
-        WHERE courseoutcome_id = ?
-	  AND rubric_no = ?
-	  ORDER BY level_val';
-    
-    $values = array($courseoutcomeid, $rubric_no);
-    $courseoutcomes = get_records_sql_assoc($sql, $values, $offset, $limit);
-
-    if (!$courseoutcomes) {
-        $courseoutcomes = array();
-    }
-
-    return $courseoutcomes;
-}
-
-function find_last_offset($limit, $courseoutcomeid, $rubric_no){
-	$values = array($courseoutcomeid, $rubric_no);
- 	$countlvls = count_records_sql('SELECT COUNT(*) FROM {courseoutcome_levels} WHERE courseoutcome_id = ? AND rubric_no = ?', $values);
-
-	$pages = ceil($countlvls/$limit);
-	$last_offset = ($pages-1)*$limit;
-	return array('last_offset' => $last_offset, 'count' => $countlvls);
-}
-
-function courseoutcome_get_menu_tabs($courseoutcome_id=0) {
-static $menu;
-global $USER;
-    $menu = array(
-        'info' => array(
-            'path' => 'courseoutcomes/info',
-            'url' => 'courseoutcome/view.php?courseoutcome='.$courseoutcome_id,
-            'title' => 'About',
-            'weight' => 20
-        ),
-	);
-if(!$USER->get('admin')){
-$rubrics = @get_records_sql_array(
-    'SELECT id
-       FROM {rubrics}
-       WHERE courseoutcome_id = ?
-	 AND deleted = 0',
-    array($courseoutcome_id)
+$smarty->assign('courseoutcomes', $results['courseoutcomes']);
+$smarty->assign('cancreate', can_create_courseoutcomes());
+$smarty->assign('pagination', $pagination['html']);
+}else{
+$degrees = @get_records_sql_array(
+    'SELECT id, degree_name
+       FROM {degree_courses}'
 );
-$subcourseoutcomes = @get_records_sql_array(
-    'SELECT id
-       FROM {courseoutcomes}
-       WHERE main_courseoutcome = ?
-	 AND deleted = 0',
-    array($courseoutcome_id)
-);
-} 
-if($USER->get('admin') || $rubrics){ 
-    $menu['rubrics'] = array(
-            'path' => 'courseoutcomes/rubrics',
-            'url' => 'courseoutcome/rubrics.php?courseoutcome='.$courseoutcome_id,
-            'title' => 'Rubrics',
-            'weight' => 30
-        );
-}
-if($USER->get('admin') || $subcourseoutcomes){
-      $menu['subcourseoutcomes'] = array(
-            'path' => 'courseoutcomes/subcourseoutcomes',
-            'url' => 'courseoutcome/courseoutcomes.php?courseoutcome='.$courseoutcome_id,
-            'title' => 'Sub courseoutcomes',
-            'weight' => 30
-        );
-}
-if($USER->get('admin')){
-      $menu['primary'] = array(
-            'path' => 'courseoutcomes/primary',
-            'url' => 'courseoutcome/primary.php?courseoutcome='.$courseoutcome_id,
-            'title' => 'Primary',
-            'weight' => 30
-        );
-}
-    if (defined('MENUITEM')) {
-        $key = substr(MENUITEM, strlen('courseoutcomes/'));
-        if ($key && isset($menu[$key])) {
-            $menu[$key]['selected'] = true;
-        }
-    }
-return $menu;
+$smarty->assign('degrees', $degrees);
+
 }
 
-function rubric_get_menu_tabs($courseoutcome_id=0, $rubric_id=0) {
-static $menu;
-global $USER;
-    $menu = array(
-        'info' => array(
-            'path' => 'courseoutcomes/rubrics/info',
-            'url' => 'courseoutcome/rubricview.php?courseoutcome='.$courseoutcome_id .'&rubric=' . $rubric_id,
-            'title' => 'About',
-            'weight' => 20
-        ),
-	);
-    if (defined('MENUITEM')) {
-        $key = substr(MENUITEM, strlen('courseoutcomes/rubrics/'));
-        if ($key && isset($menu[$key])) {
-            $menu[$key]['selected'] = true;
-        }
-    }
-return $menu;
+$smarty->assign('courseoutcomeid',$courseoutcome_id);
+$smarty->assign('main_courseoutcome',$courseoutcomedes->main_courseoutcome);
+$smarty->assign('offset',$offset);
+if($courseoutcome_id != 0){
+$smarty->assign('COURSEOUTCOMENAV', courseoutcome_get_menu_tabs($courseoutcome_id));
+$smarty->assign('PAGEHEADING', $courseoutcomedes->courseoutcome_name);
+}else{
+$smarty->assign('COURSEOUTCOMENAV','');
+if($listcourseoutcomes){
+	$smarty->assign('PAGEHEADING', 'CourseOutcomes');
+}else{
+	$smarty->assign('PAGEHEADING', 'Degree Courses');
 }
+}
+$smarty->display('courseoutcome/courseoutcomes.tpl');
+
+
 
 ?>

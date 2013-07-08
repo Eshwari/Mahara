@@ -2,16 +2,16 @@
 {if $degrees}
 {foreach from=$degrees item=degree}
 <div class="{cycle values='r0,r1'} listing">
-<h4><a href="{$WWWROOT}courseoutcome/courseoutcomes.php?program={$degree->id}">{$degree->degree_name|escape}</a></h4>&nbsp;
+<h4><a href="{$WWWROOT}courseoutcome/courseoutcomes.php?course={$degree->id}">{$degree->degree_name|escape}</a></h4>&nbsp;
 </div>
 {/foreach}
 {else}
 {if $cancreate}
             <div class="rbuttons">
-		   {if $outcomeid == 0}
+		   {if $courseoutcomeid == 0}
                 <a href="{$WWWROOT}courseoutcome/create.php?offset={$offset}" class="btn">Create Course Outcome</a>
 		   {else}
-                <a href="{$WWWROOT}outcome/create.php?courseoutcome={$courseoutcomeid}&offset={$offset}" class="btn">Create Sub Outcome</a>
+                <a href="{$WWWROOT}outcome/create.php?courseoutcome={$courseoutcomeid}&offset={$offset}" class="btn">Create Sub CourseOutcome</a>
 		   {/if}
             </div>
 {/if}

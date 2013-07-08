@@ -28,7 +28,7 @@
 define('INTERNAL', 1);
 require(dirname(dirname(__FILE__)) . '/init.php');
 require_once('pieforms/pieform.php');
-require_once('courseoutcome.php');
+require_once('courseoutcomes.php');
 
 $courseoutcome_id = param_integer('courseoutcome',0);
 $offset = param_integer('offset',0);
@@ -92,7 +92,7 @@ if($courseoutcome_id == 0){
 }
        $createcourseoutcome['elements']['degree'] = array(
             'type'         => 'select',
-            'title'        => 'Degree Program',
+            'title'        => 'Degree Course',
             'options'      => $courses,
 		'disabled' 	   => $disable,
 		'defaultvalue' => $default,
@@ -127,7 +127,7 @@ $smarty->assign('OUTCOMENAV','');
 $smarty->assign('PAGEHEADING', 'Create Course Outcome');
 }
 
-$smarty->display('courseoutcome/courseoutcomecreate.tpl');
+$smarty->display('courseoutcome/create.tpl');
 
 function createcourseoutcome_validate(Pieform $form, $values) {
 global $courseoutcome_id;
@@ -143,7 +143,7 @@ global $courseoutcome_id;
 	if($errorval){
  	$form->set_error('name', $errorval);
 	}else {
-   	if($courseoutcome_id == 0 && $_POST['degree'] == "Program"){
+   	if($courseoutcome_id == 0 && $_POST['degree'] == "Course"){
 	$err = 'Please select a course';
 	$form->set_error('degree',$err);
   	}
