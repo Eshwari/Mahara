@@ -43,7 +43,7 @@ if (!can_create_courseoutcomes()) {
 $courseoutcomedes = is_courseoutcome_available($courseoutcome_id);
 
 if (!$courseoutcomedes) {
-    throw new AccessDeniedException("Courseoutcome does not exist");
+    throw new AccessDeniedException("courseoutcome does not exist");
 }
 
 if ($courseoutcomedes->main_courseoutcome != 0){
@@ -83,12 +83,12 @@ $createcourseoutcome = array(
 );
         $createcourseoutcome['elements']['name'] = array(
             'type'         => 'text',
-            'title'        => 'courseoutcome Name',
+            'title'        => 'Courseoutcome Name',
 		'defaultvalue' => $courseoutcomedes->courseoutcome_name,
         );
         $createcourseoutcome['elements']['description'] = array(
             'type'         => 'wysiwyg',
-            'title'        => 'courseoutcome Description',
+            'title'        => 'Courseoutcome Description',
             'rows'         => 10,
             'cols'         => 55,
 		'defaultvalue' => $courseoutcomedes->description,
@@ -138,7 +138,7 @@ $addlevels = array(
 
         $addlevels['elements']['headtitle'] = array(
             'type'         => 'html',
-		'value' => '<h3 align="center">courseoutcome Levels</h3>',
+		'value' => '<h3 align="center">Courseoutcome Levels</h3>',
         );
 
 $limit = 4;
@@ -277,7 +277,7 @@ $smarty->assign('PAGEHEADING', $main_courseoutcome->courseoutcome_name);
 $smarty->assign('header', 'Edit Sub courseoutcome');
 }else{
 $smarty->assign('COURSEOUTCOMENAV','');
-$smarty->assign('PAGEHEADING', 'Edit courseoutcome');
+$smarty->assign('PAGEHEADING', 'Edit Courseoutcome');
 $smarty->assign('header', '');
 
 }
@@ -393,7 +393,7 @@ db_commit();
 }
 }
 if($cntnos > 0){
- $SESSION->add_ok_msg('courseoutcome Levels Updated');
+ $SESSION->add_ok_msg('Courseoutcome Levels Updated');
 }
 
 if(isset($_POST['savelevels'])) {

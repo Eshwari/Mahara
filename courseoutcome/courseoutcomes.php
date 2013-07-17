@@ -48,7 +48,7 @@ if(!$USER->get('staff') && !$USER->get('admin')){
 }
 
 if($courseoutcome_id == 0){
-define('MENUITEM', 'courseoutcomes/coursecourseoutcomes');
+define('MENUITEM', 'courseoutcomes/courseoutcomes');
 define('TITLE', 'Course Outcomes ');
 
 if($course_id == 0){
@@ -110,7 +110,7 @@ $smarty->assign('PAGEHEADING', $courseoutcomedes->courseoutcome_name);
 }else{
 $smarty->assign('COURSEOUTCOMENAV','');
 if($listcourseoutcomes){
-	$smarty->assign('PAGEHEADING', 'CourseOutcomes');
+	$smarty->assign('PAGEHEADING', 'Course Outcomes');
 }else{
 	$smarty->assign('PAGEHEADING', 'Degree Courses');
 }

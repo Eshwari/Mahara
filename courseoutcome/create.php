@@ -28,14 +28,17 @@
 define('INTERNAL', 1);
 require(dirname(dirname(__FILE__)) . '/init.php');
 require_once('pieforms/pieform.php');
-require_once('courseoutcomes.php');
+require_once('courseoutcome.php');
+
 
 $courseoutcome_id = param_integer('courseoutcome',0);
 $offset = param_integer('offset',0);
 
 if (!can_create_courseoutcomes()) {
+	
     throw new AccessDeniedException(get_string('accessdenied', 'error'));
 }
+
 
 $courseoutcomedes = is_courseoutcome_available($courseoutcome_id);
 
@@ -64,7 +67,7 @@ $degcourses = @get_records_sql_array(
 $courses = array();
 $courses['Course'] = 'Select a course';
 foreach($degcourses as $course){
-	$course[$course->id] = $course->degree_name;
+	$courses[$course->id] = $course->degree_name;
 }
 
 $createcourseoutcome = array(
@@ -119,11 +122,11 @@ $smarty->assign('createcourseoutcome', $createcourseoutcome);
 
 $smarty->assign('main_courseoutcome',$courseoutcomedes->main_courseoutcome);
 if($courseoutcome_id != 0){
-$smarty->assign('OUTCOMENAV', courseoutcome_get_menu_tabs($courseoutcome_id));
+$smarty->assign('COURSEOUTCOMENAV', courseoutcome_get_menu_tabs($courseoutcome_id));
 $smarty->assign('PAGEHEADING', $courseoutcomedes->courseoutcome_name);
 $smarty->assign('header', 'Create Sub Course Outcome');
 }else{
-$smarty->assign('OUTCOMENAV','');
+$smarty->assign('COURSEOUTCOMENAV','');
 $smarty->assign('PAGEHEADING', 'Create Course Outcome');
 }
 
