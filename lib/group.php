@@ -253,7 +253,8 @@ function group_create($data) {
 
     db_begin();
 
-    $id = insert_record(
+//Start-Anusha
+    /*$id = insert_record(
         'group',
         (object) array(
             'name'           => $data['name'],
@@ -267,7 +268,25 @@ function group_create($data) {
         ),
         'id',
         true
+    );*/
+	    $id = insert_record(
+        'group',
+        (object) array(
+            'name'           => $data['name'],
+            'description'    => $data['description'],
+            'grouptype'      => $data['grouptype'],
+            'jointype'       => $data['jointype'],
+            'ctime'          => $data['ctime'],
+            'mtime'          => $data['ctime'],
+            'public'         => $data['public'],
+            'usersautoadded' => $data['usersautoadded'],
+			'outcome'        => $data['outcome'],
+			'parent_group'   => $data['parent_group'],
+        ),
+        'id',
+        true
     );
+//End-Anusha
 
     foreach ($data['members'] as $userid => $role) {
         insert_record(
@@ -312,7 +331,111 @@ function group_create($data) {
 
     return $id;
 }
+//Start -Eshwari 
+function group_coursecreate($data) {
+    if (!is_array($data)) {
+        throw new InvalidArgumentException("group_coursecreate: data must be an array, see the doc comment for this "
+            . "function for details on its format");
+    }
 
+    if (!isset($data['name'])) {
+        throw new InvalidArgumentException("group_coursecreate: must specify a name for the group");
+    }
+
+    if (!isset($data['grouptype']) || !in_array($data['grouptype'], group_get_grouptypes())) {
+        throw new InvalidArgumentException("group_coursecreate: grouptype specified must be an installed grouptype");
+    }
+
+    safe_require('grouptype', $data['grouptype']);
+
+    if (isset($data['jointype'])) {
+        if (!in_array($data['jointype'], call_static_method('GroupType' . $data['grouptype'], 'allowed_join_types'))) {
+            throw new InvalidArgumentException("group_coursecreate: jointype specified is not allowed by the grouptype specified");
+        }
+    }
+    else {
+        throw new InvalidArgumentException("group_coursecreate: jointype specified must be one of the valid join types");
+    }
+
+    if (!isset($data['ctime'])) {
+        $data['ctime'] = time();
+    }
+    $data['ctime'] = db_format_timestamp($data['ctime']);
+
+    if (!is_array($data['members']) || count($data['members']) == 0) {
+        throw new InvalidArgumentException("group_coursecreate: at least one member must be specified for adding to the group");
+    }
+
+    $data['public'] = (isset($data['public'])) ? intval($data['public']) : 0;
+    $data['usersautoadded'] = (isset($data['usersautoadded'])) ? intval($data['usersautoadded']) : 0;
+
+    db_begin();
+
+
+	    $id = insert_record(
+        'group',
+        (object) array(
+            'name'           => $data['name'],
+            'description'    => $data['description'],
+            'grouptype'      => $data['grouptype'],
+            'jointype'       => $data['jointype'],
+            'ctime'          => $data['ctime'],
+            'mtime'          => $data['ctime'],
+            'public'         => $data['public'],
+            'usersautoadded' => $data['usersautoadded'],
+			'courseoutcome'  => $data['courseoutcome'],
+			'parent_group'   => $data['parent_group'],
+        ),
+        'id',
+        true
+    );
+
+
+    foreach ($data['members'] as $userid => $role) {
+        insert_record(
+            'group_member',
+            (object) array(
+                'group'  => $id,
+                'member' => $userid,
+                'role'   => $role,
+                'ctime'  => $data['ctime'],
+            )
+        );
+    }
+
+    // Copy views for the new group
+    $templates = get_column('view_autocreate_grouptype', 'view', 'grouptype', $data['grouptype']);
+    $templates = get_records_sql_array("
+        SELECT v.id, v.title, v.description 
+        FROM {view} v
+        INNER JOIN {view_autocreate_grouptype} vag ON vag.view = v.id
+        WHERE vag.grouptype = 'standard'", array());
+    if ($templates) {
+        require_once(get_config('libroot') . 'view.php');
+        foreach ($templates as $template) {
+            list($view) = View::create_from_template(array(
+                'group'       => $id,
+                'title'       => $template->title,
+                'description' => $template->description,
+            ), $template->id);
+            $view->set_access(array(array(
+                'type'      => 'group',
+                'id'        => $id,
+                'startdate' => null,
+                'stopdate'  => null,
+                'role'      => null
+            )));
+        }
+    }
+
+    $data['id'] = $id;
+    handle_event('createcoursegroup', $data);
+    db_commit();
+
+    return $id;
+}
+
+//End-Eshwari 
 /**
  * Deletes a group.
  *
@@ -677,6 +800,7 @@ function group_prepare_usergroups_for_display($groups, $returnto='mygroups') {
             FROM {group_member}
             WHERE "group" IN (' . implode(',', db_array_to_ph($groupids)) . ")
             AND role = 'admin'", $groupids);
+			
         if (!$groupadmins) {
             $groupadmins = array();
         }
@@ -835,12 +959,26 @@ function group_get_grouptype_options($currentgrouptype=null) {
  * @return array
  */
 function group_get_menu_tabs() {
+    global $USER;
     static $menu;
-
+	
     $group = group_current_group();
     if (!$group) {
         return null;
     }
+	
+	//Start-Anusha
+	if($group->outcome){
+		$groupmem = get_record('group_member','member',$USER->get('id'),'group',$group->id);
+	}
+	//End-Anusha
+	
+	//Start-Eshwari
+	if($group->courseoutcome){
+		$groupcoursemem = get_record('group_member','member',$USER->get('id'),'group',$group->id);
+	}
+	//End-Eshwari
+	
     $menu = array(
         'info' => array(
             'path' => 'groups/info',
@@ -848,13 +986,61 @@ function group_get_menu_tabs() {
             'title' => get_string('About', 'group'),
             'weight' => 20
         ),
-        'members' => array(
-            'path' => 'groups/members',
-            'url' => 'group/members.php?id='.$group->id,
-            'title' => get_string('Members', 'group'),
-            'weight' => 30
-        ),
-    );
+	);
+//Start-Anusha
+	if($groupmem){
+		if($groupmem->role != "member"){
+			$menu['members'] = array(
+				'path' => 'groups/members',
+				'url' => 'group/members.php?id='.$group->id,
+				'title' => get_string('Members', 'group'),
+				'weight' => 30
+			);	
+		}
+	}else{
+//End-Anusha
+		$menu['members'] = array(
+				'path' => 'groups/members',
+				'url' => 'group/members.php?id='.$group->id,
+				'title' => get_string('Members', 'group'),
+				'weight' => 30
+		);
+//Start-Anusha
+	}
+	//Start-Eshwari 
+	
+	if($groupcoursemem){
+		if($groupcoursemem->role != "member"){
+			$menu['members'] = array(
+				'path' => 'groups/members',
+				'url' => 'group/members.php?id='.$group->id,
+				'title' => get_string('Members', 'group'),
+				'weight' => 30
+			);	
+		}
+	}else{
+
+		$menu['members'] = array(
+
+				'path' => 'groups/members',
+				'url' => 'group/members.php?id='.$group->id,
+				'title' => get_string('Members', 'group'),
+				'weight' => 30
+		);
+
+	}
+	
+	//End-Eshwari
+	
+	//Start of subgroup logic by Shashank
+	$menu['subgroups'] = array(
+				'path' => 'groups/subgroups',
+				'url' => 'group/subgroups.php?id='.$group->id,
+				'title' => 'Sub Groups',
+				'weight' => 35
+		);
+	//End of subgroup logic by Shashank
+//End-Anusha	
     if ($group->public || group_user_access($group->id)) {
         $menu['forums'] = array(  // @todo: get this from a function in the interaction plugin (or better, make forums an artefact plugin)
             'path' => 'groups/forums',
@@ -869,6 +1055,26 @@ function group_get_menu_tabs() {
         'title' => get_string('Views', 'group'),
         'weight' => 50,
     );
+//Start-Anusha
+if($group->outcome){
+    $menu['outcome'] = array(
+        'path' => 'groups/outcomes',
+        'url' => 'group/groupoutcome.php?group='.$group->id,
+        'title' => 'Outcome Results',
+        'weight' => 60,
+    );
+}
+//End-Anusha
+//Start-Eshwari
+if($group->courseoutcome){
+    $menu['courseoutcome'] = array(
+        'path' => 'groups/courseoutcomes',
+        'url' => 'group/groupcourseoutcome.php?group='.$group->id,
+        'title' => 'Course Outcome Results',
+        'weight' => 60,
+    );
+}
+//End-Eshwari
 
     if (group_user_access($group->id)) {
         safe_require('grouptype', $group->grouptype);
@@ -935,6 +1141,38 @@ function group_param_userid($userid) {
     return $userid;
 }
 
+
+function get_subgroups($limit=20, $offset=0, $groupid) {
+	if(!$groupid){
+	$groupid = 0;
+    }    
+    $sql = 'SELECT *
+		    FROM {group}
+		    WHERE parent_group = ?		    
+		    ORDER BY name';
+	$values = array($groupid);    	
+    
+    $subgroups = get_records_sql_assoc($sql, $values, $offset, $limit);
+	
+    
+	$count = count_records_sql('SELECT COUNT(*) FROM {group} WHERE parent_group = ?', $values);
+
+    if (!$subgroups) {
+        $subgroups = array();		
+    }
+	
+	return array('subgroups' => $subgroups, 'count' => $count);
+
+}
+
+
+function can_create_subgroups() {
+    global $USER;
+    if ($USER->get('admin') || $USER->is_institutional_admin()) {
+        return true;
+    }
+    return false;
+}
 
 function group_current_group() {
     static $group;
@@ -1013,7 +1251,7 @@ function group_get_associated_groups($userid, $filter='all', $limit=20, $offset=
         $sql = "
             INNER JOIN (
                 SELECT g.id, $adminsql AS membershiptype, $empty AS reason, $adminsql AS role
-                FROM {group} g
+                FROM {group} g				
                 INNER JOIN {group_member} gm ON (gm.group = g.id AND gm.member = ? AND gm.role = 'admin')
             ) t ON t.id = g.id";
         $values = array($userid);
@@ -1022,7 +1260,7 @@ function group_get_associated_groups($userid, $filter='all', $limit=20, $offset=
         $sql = "
             INNER JOIN (
                 SELECT g.id, 'admin' AS membershiptype, $empty AS reason, $adminsql AS role
-                FROM {group} g
+                FROM {group} g				
                 INNER JOIN {group_member} gm ON (gm.group = g.id AND gm.member = ? AND gm.role = 'admin')
                 UNION
                 SELECT g.id, 'member' AS type, $empty AS reason, gm.role AS role
@@ -1054,8 +1292,8 @@ function group_get_associated_groups($userid, $filter='all', $limit=20, $offset=
         $sql = "
             INNER JOIN (
                 SELECT g.id, 'admin' AS membershiptype, '' AS reason, 'admin' AS role
-                FROM {group} g
-                INNER JOIN {group_member} gm ON (gm.group = g.id AND gm.member = ? AND gm.role = 'admin')
+                FROM {group} g				
+                INNER JOIN {group_member} gm ON (gm.group = g.id AND gm.member = ? AND gm.role = 'admin' AND g.parent_group is null OR g.parent_group=0)
                 UNION
                 SELECT g.id, 'member' AS membershiptype, '' AS reason, gm.role AS role
                 FROM {group} g
@@ -1079,7 +1317,8 @@ function group_get_associated_groups($userid, $filter='all', $limit=20, $offset=
     // gets the groups filtered by above
     // and the first three members by id
     
-    $sql = 'SELECT g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.membershiptype, g1.reason, g1.role, g1.membercount, COUNT(gmr.member) AS requests
+	//Start-Anusha - added g.outcome & g1.outcome
+    /*$sql = 'SELECT g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.membershiptype, g1.reason, g1.role, g1.membercount, COUNT(gmr.member) AS requests
         FROM (
         SELECT g.id, g.name, g.description, g.jointype, g.grouptype, t.membershiptype, t.reason, t.role, COUNT(gm.member) AS membercount
             FROM {group} g
@@ -1091,7 +1330,21 @@ function group_get_associated_groups($userid, $filter='all', $limit=20, $offset=
         ) g1
         LEFT JOIN {group_member_request} gmr ON (gmr.group = g1.id)
         GROUP BY g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.membershiptype, g1.reason, g1.role, g1.membercount';
-    
+    */
+	    $sql = 'SELECT g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.outcome, g1.membershiptype, g1.reason, g1.role, g1.membercount, COUNT(gmr.member) AS requests
+        FROM (
+        SELECT g.id, g.name, g.description, g.jointype, g.grouptype, g.outcome, t.membershiptype, t.reason, t.role, COUNT(gm.member) AS membercount
+            FROM {group} g
+            LEFT JOIN {group_member} gm ON (gm.group = g.id)' .
+            $sql . '
+            WHERE g.deleted = ?
+            GROUP BY g.id, g.name, g.description, g.jointype, g.grouptype, t.membershiptype, t.reason, t.role
+            ORDER BY g.name
+        ) g1
+        LEFT JOIN {group_member_request} gmr ON (gmr.group = g1.id)
+        GROUP BY g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.outcome, g1.membershiptype, g1.reason, g1.role, g1.membercount';
+	//End-Anusha
+	
     $groups = get_records_sql_assoc($sql, $values, $offset, $limit);
     
     if ($groups) {
