@@ -281,6 +281,7 @@ function group_create($data) {
             'public'         => $data['public'],
             'usersautoadded' => $data['usersautoadded'],
 			'outcome'        => $data['outcome'],
+			'courseoutcome'  => $data['courseoutcome'],
 			'parent_group'   => $data['parent_group'],
         ),
         'id',
@@ -331,111 +332,9 @@ function group_create($data) {
 
     return $id;
 }
-//Start -Eshwari 
-function group_coursecreate($data) {
-    if (!is_array($data)) {
-        throw new InvalidArgumentException("group_coursecreate: data must be an array, see the doc comment for this "
-            . "function for details on its format");
-    }
-
-    if (!isset($data['name'])) {
-        throw new InvalidArgumentException("group_coursecreate: must specify a name for the group");
-    }
-
-    if (!isset($data['grouptype']) || !in_array($data['grouptype'], group_get_grouptypes())) {
-        throw new InvalidArgumentException("group_coursecreate: grouptype specified must be an installed grouptype");
-    }
-
-    safe_require('grouptype', $data['grouptype']);
-
-    if (isset($data['jointype'])) {
-        if (!in_array($data['jointype'], call_static_method('GroupType' . $data['grouptype'], 'allowed_join_types'))) {
-            throw new InvalidArgumentException("group_coursecreate: jointype specified is not allowed by the grouptype specified");
-        }
-    }
-    else {
-        throw new InvalidArgumentException("group_coursecreate: jointype specified must be one of the valid join types");
-    }
-
-    if (!isset($data['ctime'])) {
-        $data['ctime'] = time();
-    }
-    $data['ctime'] = db_format_timestamp($data['ctime']);
-
-    if (!is_array($data['members']) || count($data['members']) == 0) {
-        throw new InvalidArgumentException("group_coursecreate: at least one member must be specified for adding to the group");
-    }
-
-    $data['public'] = (isset($data['public'])) ? intval($data['public']) : 0;
-    $data['usersautoadded'] = (isset($data['usersautoadded'])) ? intval($data['usersautoadded']) : 0;
-
-    db_begin();
 
 
-	    $id = insert_record(
-        'group',
-        (object) array(
-            'name'           => $data['name'],
-            'description'    => $data['description'],
-            'grouptype'      => $data['grouptype'],
-            'jointype'       => $data['jointype'],
-            'ctime'          => $data['ctime'],
-            'mtime'          => $data['ctime'],
-            'public'         => $data['public'],
-            'usersautoadded' => $data['usersautoadded'],
-			'courseoutcome'  => $data['courseoutcome'],
-			'parent_group'   => $data['parent_group'],
-        ),
-        'id',
-        true
-    );
 
-
-    foreach ($data['members'] as $userid => $role) {
-        insert_record(
-            'group_member',
-            (object) array(
-                'group'  => $id,
-                'member' => $userid,
-                'role'   => $role,
-                'ctime'  => $data['ctime'],
-            )
-        );
-    }
-
-    // Copy views for the new group
-    $templates = get_column('view_autocreate_grouptype', 'view', 'grouptype', $data['grouptype']);
-    $templates = get_records_sql_array("
-        SELECT v.id, v.title, v.description 
-        FROM {view} v
-        INNER JOIN {view_autocreate_grouptype} vag ON vag.view = v.id
-        WHERE vag.grouptype = 'standard'", array());
-    if ($templates) {
-        require_once(get_config('libroot') . 'view.php');
-        foreach ($templates as $template) {
-            list($view) = View::create_from_template(array(
-                'group'       => $id,
-                'title'       => $template->title,
-                'description' => $template->description,
-            ), $template->id);
-            $view->set_access(array(array(
-                'type'      => 'group',
-                'id'        => $id,
-                'startdate' => null,
-                'stopdate'  => null,
-                'role'      => null
-            )));
-        }
-    }
-
-    $data['id'] = $id;
-    handle_event('createcoursegroup', $data);
-    db_commit();
-
-    return $id;
-}
-
-//End-Eshwari 
 /**
  * Deletes a group.
  *

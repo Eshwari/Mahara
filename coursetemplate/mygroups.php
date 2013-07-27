@@ -74,7 +74,7 @@ $pagination = build_pagination(array(
     'resultcounttextplural' => get_string('groups', 'group'),
 ));
 
-group_prepare_usergroups_for_display($results['coursetemplate'], 'mygroups');
+group_prepare_usergroups_for_display($results['groups'], 'mygroups');
 
 $smarty = smarty();
 $smarty->assign('groups', $results['groups']);

@@ -267,7 +267,84 @@ class View {
             $copystatus,
         );
     }
+ //start-Eshwari
+  public static function create_from_template_course($viewdata, $templateid, $userid=null, $checkaccess=true) {
+        if (is_null($userid)) {
+            global $USER;
+            $userid = $USER->get('id');
+        }
 
+        $user = new User();
+        $user->find_by_id($userid);
+
+        db_begin();
+
+        $template = new View($templateid);
+
+        if ($template->get('deleted')) {
+            throw new SystemException("View::create_from_template_course: This template has been deleted");
+        }
+
+        if (!$template->get('template') && !$user->can_edit_view($template)) {
+            throw new SystemException("View::create_from_template_course: Attempting to create a View from another View that is not marked as a template");
+        }
+        else if ($checkaccess && !can_view_view($templateid, $userid)) {
+            throw new SystemException("View::create_from_template_course: User $userid is not permitted to copy View $templateid");
+        }
+
+        $view = self::_create($viewdata, $userid);
+
+        // Set a default title if one wasn't set
+        if (!isset($viewdata['title'])) {
+			if($template->get('group')!=null)
+			{
+				$groupname = get_record('group', 'id', $template->get('group'));
+				$view->set('title', self::new_title(get_string('Copyof', 'mahara', $groupname->name), (object)$viewdata));
+			}
+			else
+			{
+				$view->set('title', self::new_title(get_string('Copyof', 'mahara', $template->get('title')), (object)$viewdata));
+			}
+            $view->set('dirty', true);
+        }
+
+		//Start-Anusha
+		// Outcome mapping
+        $view->set('submittedcourseoutcome',$template->get('submittedcourseoutcome'));
+		$view->set('group',$template->get('group'));		
+		$view->set('copied',1);
+		//End-Anusha				
+		
+		//Start of access setting by Shashank
+		$view->set_access(array(array(
+                'type'      => 'group',
+                'id'        => $viewdata['group'],
+                'startdate' => null,
+                'stopdate'  => null,
+                'role'      => 'Tutor'
+            )));
+		
+		//End of access setting by Shashank
+		
+        try {
+            $copystatus = $view->copy_contents($template);
+        }
+        catch (QuotaExceededException $e) {
+            db_rollback();
+            return array(null, $template, array('quotaexceeded' => true));
+        }
+
+        $view->commit();		
+        db_commit();		
+
+        return array(
+            $view,
+            $template,
+            $copystatus,
+        );
+    }
+ 
+ //End-Eshwari
     /**
      * Creates a new View for the given user, based on the given information 
      * about the view.

@@ -1,12 +1,9 @@
 {include file="header.tpl"}
 {if $cancreate}
-            
-      
-			<div class="rbuttons">
+            <div class="rbuttons">
                 <a href="{$WWWROOT}coursetemplate/createcourse.php" class="btn" >{str tag="createcourse" section="group"}</a>
             </div>
-			
-		    {/if}
+			{/if}
 
 
 {$form}
@@ -17,7 +14,7 @@
                      {include file="coursetemplate/groupuserstatus.tpl" group=$group returnto='find'}
                 </div>
                 <div>
-                     {include file="coursetemplate/group.tpl" group=$group returnto='mygroups'}
+                     {include file="coursetemplate/coursegroup.tpl" group=$group returnto='mygroups'}
                 </div>
             </div>
 {/foreach}

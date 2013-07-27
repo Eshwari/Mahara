@@ -26,7 +26,7 @@
  */
 
 define('INTERNAL', 1);
-define('MENUITEM', 'groups/groupsiown');
+define('MENUITEM', 'coursetemplate/groupsiown');
 require(dirname(dirname(__FILE__)) . '/init.php');
 require_once('pieforms/pieform.php');
 require_once('group.php');
@@ -36,7 +36,6 @@ if (!group_can_create_groups()) {
     throw new AccessDeniedException(get_string('accessdenied', 'error'));
 }
 
-//Start-Anusha
 $courseoutcomes = @get_records_sql_array(
 	'SELECT o.id,o.courseoutcome_name, o.degree_id
 		FROM {courseoutcomes} o
@@ -52,7 +51,7 @@ $notavailable = @get_records_sql_array(
 );
 
 $options[0] = array(
-        'value'    => 'Select an courseoutcome',
+        'value'    => 'Select an Course Outcome',
         'disabled' => false,
     );
 foreach ($courseoutcomes as $courseoutcome) {
@@ -68,56 +67,7 @@ foreach ($courseoutcomes as $courseoutcome) {
         'disabled' => $disable,
     );
 }
-/*$createcoursegroup = pieform(array(
-    'name'     => 'createcoursegroup',
-    'method'   => 'post',
-    'plugintype' => 'core',
-    'pluginname' => 'groups',
-    'elements' => array(
-        'name' => array(
-            'type'         => 'text',
-            'title'        => get_string('groupname', 'group'),
-            'rules'        => array( 'required' => true, 'maxlength' => 128 ),
-        ),
-        'description' => array(
-            'type'         => 'wysiwyg',
-            'title'        => get_string('groupdescription', 'group'),
-            'rows'         => 10,
-            'cols'         => 55,
-        ),
-        'grouptype' => array(
-            'type'         => 'select',
-            'title'        => get_string('grouptype', 'group'),
-            'options'      => group_get_grouptype_options(),
-            'defaultvalue' => 'standard.open',
-            'help'         => true,
-        ),
-        'public' => array(
-            'type'         => 'select',
-            'title'        => get_string('publiclyviewablegroup', 'group'),
-            'description'  => get_string('publiclyviewablegroupdescription', 'group'),
-            'options'      => array(true  => get_string('yes'),
-                                    false => get_string('no')),
-            'defaultvalue' => 'no',
-            'help'         => true,
-            'ignore'       => !(get_config('createpublicgroups') == 'all' || get_config('createpublicgroups') == 'admins' && $USER->get('admin')),
-        ),
-        'usersautoadded' => array(
-            'type'         => 'select',
-            'title'        => get_string('usersautoadded', 'group'),
-            'description'  => get_string('usersautoaddeddescription', 'group'),
-            'options'      => array(true  => get_string('yes'),
-                                    false => get_string('no')),
-            'defaultvalue' => 'no',
-            'help'         => true,
-            'ignore'       => !$USER->get('admin'),
-        ),
-        'submit'   => array(
-            'type'  => 'submitcancel',
-            'value' => array(get_string('savegroup', 'group'), get_string('cancel')),
-        ),
-    ),
-));*/
+
 if($_GET['courseoutcome']!=null)
 {
 	$createcoursegroup = pieform(array(
@@ -146,7 +96,7 @@ if($_GET['courseoutcome']!=null)
 			),
 			'groupcourseoutcome' => array(
 					'type' => 'select',
-					'title' => 'Associate the group to an outcome',
+					'title' => 'Associate the group to an Course Outcome',
 					'collapseifoneoption' => false,
 					'options' => $options,
 					'disabled' 	   => $disable,
@@ -178,7 +128,7 @@ if($_GET['courseoutcome']!=null)
 			),
 		),
 	));
-	//End-Anusha
+
 }
 else
 {
@@ -238,20 +188,17 @@ else
 			),
 		),
 	));
-	//End-Anusha
+	
 }
 
 $smarty = smarty();
 $smarty->assign('createcoursegroup', $createcoursegroup);
 $smarty->assign('PAGEHEADING', hsc(TITLE));
-$smarty->display('coursetemplate/createcoursegroup.tpl');
+$smarty->display('coursetemplate/createcourse.tpl');
 
 
 function createcoursegroup_validate(Pieform $form, $values) {
-	//Start - Anusha
-	    /*if (get_field('group', 'id', 'name', $values['name']) {
-        	$form->set_error('name', get_string('groupalreadyexists', 'group'));
-    	   }*/
+	
     	$out = $values['groupcourseoutcome'];
 		
 		if($out){
@@ -267,7 +214,7 @@ function createcoursegroup_validate(Pieform $form, $values) {
     if (get_field('group', 'id', 'name', $degree_name)) {
         $form->set_error('name', get_string('groupalreadyexists', 'group'));
     }
-    //End - Anusha
+ 
 }
 
 function createcoursegroup_cancel_submit() {
@@ -282,7 +229,7 @@ function createcoursegroup_submit(Pieform $form, $values) {
     $values['public'] = (isset($values['public'])) ? $values['public'] : 0;
     $values['usersautoadded'] = (isset($values['usersautoadded'])) ? $values['usersautoadded'] : 0;
 
-	//Start-Anusha
+	
 	if($values['groupcourseoutcome'] == 0) {
 		$out = null;
 	}else{
@@ -296,15 +243,7 @@ function createcoursegroup_submit(Pieform $form, $values) {
 			$degree_name = $values['name'];			
 		}
 	}
-    /*$id = group_create(array(
-        'name'           => $values['name'],
-        'description'    => $values['description'],
-        'grouptype'      => $grouptype,
-        'jointype'       => $jointype,
-        'public'         => intval($values['public']),
-        'usersautoadded' => intval($values['usersautoadded']),
-        'members'        => array($USER->get('id') => 'admin'),
-    ));	*/
+    
     $id = group_create(array(
         'name'           => $degree_name,
         'description'    => $values['description'],
@@ -316,13 +255,14 @@ function createcoursegroup_submit(Pieform $form, $values) {
         'members'        => array($USER->get('id') => 'admin'),		
 		'parent_group'   => $_GET['id'],
     ));
-	//End-Anusha
+	//function
+	
 
     $USER->reset_grouproles();
-
+ 
     $SESSION->add_ok_msg(get_string('groupsaved', 'group'));
-	//update_record('group',$_GET['courseoutcome'],$_GET['id']);
-    redirect('/coursetemplate/view.php?id=' . $id);
+	
+    redirect('/coursetemplate/viewcourse.php?id=' . $id);
 }
 
 ?>
