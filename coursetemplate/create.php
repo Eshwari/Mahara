@@ -54,21 +54,25 @@ if($coursetemplate_id == 0){
 	define('TITLE', $coursetemplatedes->coursetemplate_name);
 }
 
-$assesstype = array();
-$assesstype['Level'] = 'Levels';
-$assesstype['Meets/Does not meet'] = 'Meets/Does not meet';
-//offering type
-$offeringtype =array();
-$offeringtype['Spring-14'] = 'Spring-14';
-$offeringtype['Fall-14'] = 'Fall-14';
-$offeringtype['Spring-15'] = 'Spring-15';
-$offeringtype['Fall-15'] = 'Fall-15';
+
 //college offering type
 $collegeofferingtype =array();
+$collegeofferingtype ['Collegeofferingtype'] = 'Select a Collage';
 $collegeofferingtype['Business, W. P. Carey School of Business'] ='Business, W. P. Carey School of Business';
 $collegeofferingtype['Colleg of Technology and Innovation']= 'Colleg of Technology and Innovation'; 
 $collegeofferingtype['Mary Lou Fulton'] = 'Mary Lou Fulton';
 $collegeofferingtype['School of Letter and Science']='School of Letter and Science';
+//department offering type
+$deptofferingtype = array();
+$deptofferingtype['Deptofferingtype'] = 'Select a Department';
+$deptofferingtype['Engineering and computing'] ='Engineering and computing';
+$deptofferingtype['Applied Science'] ='Applied Science';
+$deptofferingtype['Industry Management']= 'Industry Management';
+//pre-requisite
+$prerequisite= array();
+$prerequisite['prerequisite'] ='Select one';
+$prerequisite['Yes'] ='Yes';
+$prerequisite['No'] = 'No';
 
 $degcourses = @get_records_sql_array(
 	'SELECT id, course_name
@@ -77,22 +81,9 @@ $degcourses = @get_records_sql_array(
 );
 
 $courses = array();
-$courses['Course'] = 'Select a course';
+$courses['Course'] = 'Select a Degree course';
 foreach($degcourses as $course){
 	$courses[$course->id] = $course->course_name;
-}
-//course outcomes-Eshwari
-
-$course_outs = @get_records_sql_array(
-	'SELECT id, courseoutcome_name
-		FROM {courseoutcomes}',
-	array()
-);
-
-$course_outcomes =array();
-$course_outcomes['courseoutcomes'] = 'Select course outcomes';
-foreach($course_outs as $courseoutcomes){
-	$course_outcomes[$courseoutcomes->id] = $courseoutcomes->courseoutcome_name;
 }
 $createcoursetemplate = array(
     'name'     => 'createcoursetemplate',
@@ -103,37 +94,39 @@ $createcoursetemplate = array(
             'type'         => 'text',
             'title'        => 'Course Template Name',
         );
-        $createcoursetemplate['elements']['course_description'] = array(
-            'type'         => 'wysiwyg',
-            'title'        => 'Course Template Description',
-            'rows'         => 10,
-            'cols'         => 55,
-        );
+       
 		$createcoursetemplate['elements']['collegeofferingtype'] = array(
             'type'         => 'select',
             'title'        => 'College Offering',
 			'options'      =>  $collegeofferingtype,
 			'defaultyvalue'=>  'Colleg of Technology and Innovation',
         );
-		$createcoursetemplate['elements']['prerequisite'] = array(
+		$createcoursetemplate['elements']['deptofferingtype'] = array(
+            'type'         => 'select',
+            'title'        => 'Department Offering',
+			'options'      =>  $deptofferingtype,
+			'defaultyvalue'=>  'Colleg of Technology and Innovation',
+        );
+		 $createcoursetemplate['elements']['course_description'] = array(
             'type'         => 'wysiwyg',
-            'title'        => 'Course Pre-requisites',
+            'title'        => 'Course Description',
             'rows'         => 10,
             'cols'         => 55,
         );
-		$createcoursetemplate['elements']['offeringtype'] = array(
+		$createcoursetemplate['elements']['prerequisite'] = array(
             'type'         => 'select',
-            'title'        => 'Offering Semester',
-			'options'      =>  $offeringtype,
-			'defaultyvalue'=>  'Spring-14',
+            'title'        => 'Indicate Pre-requisites exist for the Course',
+            'options'      => $prerequisite,
+            'defaultyvalue' => 'prerequisite',
         );
+		
 
 if($coursetemplate_id == 0){
 	$disable = 0;
 	$default = '';
 }else{
 	$disable = 1;
-	$default = $coursetemplatedes->course_id;
+	$default = $coursetemplatedes->degree_id;
 }
 
 
@@ -144,20 +137,9 @@ if($coursetemplate_id == 0){
 		'disabled' 	   => $disable,
 		'defaultvalue' => $default,
         );
-		$createcoursetemplate['elements']['courseoutcome'] = array(
-            'type'         => 'select',
-            'title'        => 'Course outcomes',
-            'options'      => $courseoutcomes,
-			'disabled' 	   => $disable,
-			'defaultvalue' => $default,
-        );
 
-        $createcoursetemplate['elements']['assesstype'] = array(
-            'type'         => 'select',
-            'title'        => 'Evaluation Type',
-            'options'      => $assesstype,
-            'defaultvalue' => 'Level',
-        );
+
+      
 	  $createcoursetemplate['elements']['coursetemplateid'] = array(
 		'type' => 'hidden',
 		'value' => $coursetemplate_id,
@@ -220,18 +202,18 @@ if($coursetemplate_id == 0){
 }
 
 $str= $_POST['course_description'];
-$str2 =$_POST['prerequisite'];
+
 /*$desclen = strlen($desc);
 $str = substr($desc,3,$desclen-7);*/
 
 db_begin();
-$newcoursetemplate = insert_record('course_template', (object)array('coursetemplate_name' => $_POST['name'],'course_description' => $str,'prerequisite	' => $str2, 'degree_id' => $degree,'college_offering' =>$_POST['collegeofferingtype'], 'offering' => $_POST['offeringtype'],'eval_type' => $_POST['assesstype'], 'main_coursetemplate' => $_POST['coursetemplateid'], 'deleted' => 0),'id',true);
+$newcoursetemplate = insert_record('course_template', (object)array('coursetemplate_name' => $_POST['name'],'course_description' => $str,'prerequisite_type	' => $_POST['prerequisite'], 'degree_id' => $degree,'college_offering' =>$_POST['collegeofferingtype'],'dept_offering' =>$_POST['deptofferingtype'], 'main_coursetemplate' => $_POST['coursetemplateid'], 'deleted' => 0),'id',true);
 db_commit();
 
 
     $SESSION->add_ok_msg('Course Template Saved');
 
-   if($_POST['assesstype'] == 'Level'){
+   if($_POST['prerequisite'] == 'Yes'){
     redirect(get_config('wwwroot').'coursetemplate/edit.php?coursetemplate=' . $newcoursetemplate. '&main_offset=' . $offset);
    }else{
     redirect(get_config('wwwroot').'/coursetemplate/coursetemplates.php?coursetemplate=' . $_POST['coursetemplateid']. '&offset=' . $offset);

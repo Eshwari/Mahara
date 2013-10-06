@@ -60,9 +60,15 @@ if (!$main_coursetemplate) {
 
 define('TITLE', $coursetemplatedes->coursetemplate_name);
 
-$assesstype = array();
+/*$assesstype = array();
 $assesstype['Level'] = 'Levels';
 $assesstype['Meets/Does not meet'] = 'Meets/Does not meet';
+*/
+//pre-requisite
+$prerequisite= array();
+$prerequisite['prerequisite'] ='Select one';
+$prerequisite['Yes'] ='Yes';
+$prerequisite['No'] = 'No';
 
 $degcourses = @get_records_sql_array(
 	'SELECT id, course_name
@@ -75,6 +81,19 @@ $courses['Course'] = 'Select a Course';
 foreach($degcourses as $course){
 	$courses[$course->id] = $course->course_name;
 }
+//college offering type
+$collegeofferingtype =array();
+$collegeofferingtype ['Collegeofferingtype'] = 'Select a Collage';
+$collegeofferingtype['Business, W. P. Carey School of Business'] ='Business, W. P. Carey School of Business';
+$collegeofferingtype['Colleg of Technology and Innovation']= 'Colleg of Technology and Innovation'; 
+$collegeofferingtype['Mary Lou Fulton'] = 'Mary Lou Fulton';
+$collegeofferingtype['School of Letter and Science']='School of Letter and Science';
+//department offering type
+$deptofferingtype = array();
+$deptofferingtype['Deptofferingtype'] = 'Select a Department';
+$deptofferingtype['Engineering and computing'] ='Engineering and computing';
+$deptofferingtype['Applied Science'] ='Applied Science';
+$deptofferingtype['Industry Management']= 'Industry Management';
 
 $createcoursetemplate = array(
     'name'     => 'createcoursetemplate',
@@ -86,6 +105,20 @@ $createcoursetemplate = array(
             'title'        => 'coursetemplate Name',
 		'defaultvalue' => $coursetemplatedes->coursetemplate_name,
         );
+		
+		$createcoursetemplate['elements']['collegeofferingtype'] = array(
+            'type'         => 'select',
+            'title'        => 'College Offering',
+			'options'      =>  $collegeofferingtype,
+			'defaultvalue'=>  $coursetemplatedes->college_offering,
+        );
+		$createcoursetemplate['elements']['deptofferingtype'] = array(
+            'type'         => 'select',
+            'title'        => 'Department Offering',
+			'options'      =>  $deptofferingtype,
+			'defaultvalue'=>  $coursetemplatedes->dept_offering,
+        );
+		
         $createcoursetemplate['elements']['course_description'] = array(
             'type'         => 'wysiwyg',
             'title'        => 'coursetemplate Description',
@@ -93,6 +126,7 @@ $createcoursetemplate = array(
             'cols'         => 55,
 		'defaultvalue' => $coursetemplatedes->course_description,
         );
+		
 if($coursetemplatedes->main_coursetemplate == 0){
 	$disable = 0;
 }else{
@@ -105,12 +139,13 @@ if($coursetemplatedes->main_coursetemplate == 0){
 		'disabled' 	   => $disable,
 		'defaultvalue' => $coursetemplatedes->degree_id,
         );
-        $createcoursetemplate['elements']['assesstype'] = array(
+		$createcoursetemplate['elements']['prerequisite'] = array(
             'type'         => 'select',
-            'title'        => 'Evaluation Type',
-            'options'      => $assesstype,
-            'defaultvalue' => $coursetemplatedes->eval_type,
+            'title'        => 'Indicate Pre-requisites exist for the Course',
+            'options'      => $prerequisite,
+            'defaultvalue' => $coursetemplatedes->prerequisite_type,
         );
+        
 	  $createcoursetemplate['elements']['coursetemplateid'] = array(
 		'type' => 'hidden',
 		'value' => $coursetemplate_id,
@@ -124,61 +159,59 @@ if($coursetemplatedes->main_coursetemplate == 0){
             'value' => array('Save', 'Cancel'),
         );
 
-if($coursetemplatedes->eval_type == 'Level'){
-$addlevels = array(
-    'name'     => 'addlevels',
+if($coursetemplatedes->prerequisite_type == 'Yes'){
+$add_prerequisites = array(
+    'name'     => 'add_prerequisites',
     'method'   => 'post',
     'elements' => array(),
 );
 
-        $addlevels['elements']['header'] = array(
+        $add_prerequisites['elements']['header'] = array(
             'type'         => 'html',
 		'value' => '<br/><table class="fullwidth table"><thead><tr><th></th></tr></thead></table><br/>',
         );
 
-        $addlevels['elements']['headtitle'] = array(
+        $add_prerequisites['elements']['headtitle'] = array(
             'type'         => 'html',
-		'value' => '<h3 align="center">coursetemplate Levels</h3>',
+		'value' => '<h3 align="center">Course Pre-Requisites</h3>',
         );
 
 $limit = 4;
-$coursetemplatelevels = get_coursetemplate_levels($offset, $limit, $coursetemplate_id, 0);
-$countlvls = find_last_offset($limit, $coursetemplate_id, 0);
+$coursetemplate_prerequisites = get_coursetemplate_prerequisites($offset, $limit, $coursetemplate_id, 0);
+$countpres = find_last_offset($limit, $coursetemplate_id, 0);
 
-if($offset >= $countlvls['last_offset']){
+if($offset >= $countpres['last_offset']){
 	$adddisabled = 0;
 }else{
 	$adddisabled = 1;
 }
-if($coursetemplatelevels){
+if($coursetemplate_prerequisites){
 $i = 0;
-$dellink = get_config('wwwroot') . 'coursetemplate/deletelvl.php';
-foreach($coursetemplatelevels as $coursetemplatelevel){
-        $addlevels['elements']['dellvl'.$i] = array(
+$dellink = get_config('wwwroot') . 'coursetemplate/deletepre.php';
+foreach($coursetemplate_prerequisites as $coursetemplate_prerequisite){
+        $add_prerequisites['elements']['delpre'.$i] = array(
             'type'         => 'html',
-		'value' => '<a href="' . $dellink . '?coursetemplate=' . $coursetemplate_id . '&levelid=' . $coursetemplatelevel->id .'&main_offset=' . $main_offset . '&offset=' . $offset . '" class="btn-del">Delete</a>',
+		'value' => '<a href="' . $dellink . '?coursetemplate=' . $coursetemplate_id . '&prereqid=' . $coursetemplate_prerequisite->id .'&main_offset=' . $main_offset . '&offset=' . $offset . '" class="btn-del">Delete</a>',
         );
-        $addlevels['elements']['level'.$i] = array(
+        $add_prerequisites['elements']['prereq'.$i] = array(
             'type'         => 'text',
-            'title'        => 'Level',
-		'defaultvalue' => $coursetemplatelevel->level_val,
+            'title'        => 'Pre-Requisite No.',
+		'defaultvalue' => $coursetemplatelevel->prerequisite_val,
         );
-        $addlevels['elements']['oldlevel'.$i] = array(
+        $add_prerequisites['elements']['oldprereq'.$i] = array(
             'type'         => 'hidden',
-		'value' => $coursetemplatelevel->level_val,
+		'value' => $coursetemplatelevel->prerequisite_val,
         );
-        $addlevels['elements']['description'.$i] = array(
-            'type'         => 'textarea',
+        $add_prerequisites['elements']['description'.$i] = array(
+            'type'         => 'text',
             'title'        => 'Description',
-            'rows'         => 10,
-            'cols'         => 55,
-		'defaultvalue' => $coursetemplatelevel->level_desc,
+            'defaultvalue' => $coursetemplatelevel->prerequisite_desc,
         );
-        $addlevels['elements']['olddesc'.$i] = array(
+        $add_prerequisites['elements']['olddesc'.$i] = array(
             'type'         => 'hidden',
-		'value' => $coursetemplatelevel->level_desc,
+		'value' => $coursetemplatelevel->prerequisite_desc,
         );
-        $addlevels['elements']['levelid'.$i] = array(
+        $add_prerequisites['elements']['prereqid'.$i] = array(
             'type'         => 'hidden',
             'value' => $coursetemplatelevel->id,
         );
@@ -187,25 +220,23 @@ foreach($coursetemplatelevels as $coursetemplatelevel){
 if($i < 4){
 for($j=$i; $j < $limit; $j++){
 
-        $addlevels['elements']['level'.$j] = array(
+        $add_prerequisites['elements']['prereq'.$j] = array(
             'type'         => 'text',
-            'title'        => 'Level',
+            'title'        => 'Pre-Requisite No.',
         );
-        $addlevels['elements']['oldlevel'.$j] = array(
+        $add_prerequisites['elements']['oldprereq'.$j] = array(
             'type'         => 'hidden',
 		'value' => 'null',
         );
-        $addlevels['elements']['description'.$j] = array(
-            'type'         => 'textarea',
+        $add_prerequisites['elements']['description'.$j] = array(
+            'type'         => 'text',
             'title'        => 'Description',
-            'rows'         => 10,
-            'cols'         => 55,
         );
-        $addlevels['elements']['olddesc'.$j] = array(
+        $add_prerequisites['elements']['olddesc'.$j] = array(
             'type'         => 'hidden',
 		'value' => 'null',
         );
-        $addlevels['elements']['levelid'.$i] = array(
+        $add_prerequisites['elements']['prereqid'.$i] = array(
             'type'         => 'hidden',
             'value' => '',
         );
@@ -215,50 +246,49 @@ for($j=$i; $j < $limit; $j++){
 }else{
 for($i=0; $i < $limit; $i++){
 
-        $addlevels['elements']['level'.$i] = array(
+        $add_prerequisites['elements']['prereq'.$i] = array(
             'type'         => 'text',
-            'title'        => 'Level',
+
+            'title'        => 'Pre-Requisite No.',
         );
-        $addlevels['elements']['oldlevel'.$i] = array(
+        $add_prerequisites['elements']['oldprereq'.$i] = array(
             'type'         => 'hidden',
 		'value' => 'null',
         );
-        $addlevels['elements']['description'.$i] = array(
-            'type'         => 'wysiwyg',
+        $add_prerequisites['elements']['description'.$i] = array(
+            'type'         => 'text',
             'title'        => 'Description',
-            'rows'         => 10,
-            'cols'         => 55,
         );
-        $addlevels['elements']['olddesc'.$i] = array(
+        $add_prerequisites['elements']['olddesc'.$i] = array(
             'type'         => 'hidden',
 		'value' => 'null',
         );
-        $addlevels['elements']['levelid'.$i] = array(
+        $add_prerequisites['elements']['prereqid'.$i] = array(
             'type'         => 'hidden',
             'value' => '',
         );
 }
 }
-        $addlevels['elements']['savelevels'] = array(
+        $add_prerequisites['elements']['saveprereqs'] = array(
             'type'         => 'submit',
             'value' => 'Save',
         );
         if(!$adddisabled){
-        $addlevels['elements']['addlevels'] = array(
+        $add_prerequisites['elements']['add_prerequisites'] = array(
             'type'         => 'submit',
             'value' => 'Save & Add more',
         );
 	  }
 
-$addlevels= pieform($addlevels);
+$add_prerequisites= pieform($add_prerequisites);
 
 $pagination = build_pagination(array(
     'url' => get_config('wwwroot') . 'coursetemplate/edit.php?coursetemplate=' . $coursetemplate_id . '&main_offset=' .$main_offset,
-    'count' => $countlvls['count'],
+    'count' => $countpres['count'],
     'limit' => $limit,
     'offset' => (int)$offset,
-    'resultcounttextsingular' => 'coursetemplate level',
-    'resultcounttextplural' => 'coursetemplate levels',
+    'resultcounttextsingular' => 'coursetemplate prereq',
+    'resultcounttextplural' => 'coursetemplate prereqs',
 ));
 
 }
@@ -267,7 +297,7 @@ $pagination = build_pagination(array(
 $createcoursetemplate = pieform($createcoursetemplate);
 $smarty = smarty();
 $smarty->assign('createcoursetemplate', $createcoursetemplate);
-$smarty->assign('addlevels',$addlevels);
+$smarty->assign('add_prerequisites',$add_prerequisites);
 $smarty->assign('pagination', $pagination['html']);
 $smarty->assign('main_coursetemplate',$main_coursetemplate->main_coursetemplate);
 
@@ -283,15 +313,16 @@ $smarty->assign('header', '');
 }
 $smarty->display('coursetemplate/edit.tpl');
 
-
-function createcoursetemplate_validate(Pieform $form, $values) {
+function coursetemplate_validate(Pieform $form, $values) {
 global $coursetemplate_id,$coursetemplatedes;
+
  	$errorval = '';
    if($values['name'] == ''){
 	$errorval = "coursetemplate Name is mandatory";
    }
 
 if($coursetemplatedes->main_coursetemplate){
+
 	$degree_id = $coursetemplatedes->degree_id;
 }else{
 	$degree_id = $_POST['degree'];
@@ -309,11 +340,14 @@ if($coursetemplatedes->main_coursetemplate){
 	$err = 'Please select a course';
 	$form->set_error('degree',$err);
   	}
-	}
+	if($_POST['degree'] == "Course"){
+	$err = 'Please select a course';
+	$form->set_error('degree',$err);
+  	}
+    }
+ }
 
-}
-
-function createcoursetemplate_cancel_submit(Pieform $form, $values) {
+ function createcoursetemplate_cancel_submit(Pieform $form, $values) {
 global $main_offset;
     redirect(get_config('wwwroot').'/coursetemplate/coursetemplates.php?coursetemplate=' . $_POST['maincoursetemplate'] . '&offset=' . $main_offset);
 }
@@ -339,7 +373,7 @@ $str= $_POST['course_description'];
 /*$desclen = strlen($desc);
 $str = substr($desc,3,$desclen-7);*/
 
-update_record('course_template', array('coursetemplate_name' => $_POST['name'],'course_description' => $str, 'degree_id' => $degree_id, 'special_access' => $primaryval, 'eval_type' => $_POST['assesstype']),array('id' => $_POST['coursetemplateid']));
+update_record('course_template', array('coursetemplate_name' => $_POST['name'],'course_description' => $str, 'prerequisite_type	' => $_POST['prerequisite'],'degree_id' => $degree_id,'college_offering' =>$_POST['collegeofferingtype'],'dept_offering' =>$_POST['deptofferingtype'], 'special_access' => $primaryval, array('id' => $_POST['coursetemplateid'])));
 
 db_commit();
 
@@ -349,18 +383,18 @@ db_commit();
 
 }
 
-function addlevels_validate(Pieform $form, $values){
+function add_prerequisites_validate(Pieform $form, $values){
 global $limit;
 global $coursetemplate_id;
 
 for($i = 0; $i<$limit; $i++){
-	if($values['level'.$i] == '' && $values['description'.$i] != ''){
-		$form->set_error('level'.$i,'Enter a level for the description');
+	if($values['prereq'.$i] == '' && $values['description'.$i] != ''){
+		$form->set_error('prereq'.$i,'Enter a prereq for the description');
 	}
 }
 }
 
-function addlevels_submit(Pieform $form, $values){
+function add_prerequisites_submit(Pieform $form, $values){
 global $limit;
 global $offset, $main_offset;
 global $coursetemplate_id;
@@ -369,23 +403,23 @@ global $SESSION;
 $cntnos = 0;
 for($i = 0; $i<$limit; $i++){
 $assess = '';
-if($_POST['level'.$i] != ''){
+if($_POST['prereq'.$i] != ''){
 $cntnos = $cntnos + 1;
-if(!($_POST['oldlevel'.$i] == $_POST['level'.$i] && $_POST['olddesc'.$i] == $_POST['description'.$i])){
+if(!($_POST['oldprereq'.$i] == $_POST['prereq'.$i] && $_POST['olddesc'.$i] == $_POST['description'.$i])){
 
-$assess = $_POST['levelid'.$i];
-
-$str = $_POST['course_description'.$i];
+$assess = $_POST['prereqid'.$i];
+//may have to change to text
+$str = $_POST['description'.$i];
 /*$desclen = strlen($desc);
 $str = substr($desc,3,$desclen-7);*/
 
 db_begin();
 if($assess){
 
-	update_record('coursetemplate_levels', array('level_val'=>$_POST['level'.$i],'level_desc' => $str),array('id' => $assess));
+	update_record('coursetemplate_prerequisites', array('prerequisite_val'=>$_POST['level'.$i],'prerequisite_desc' => $_POST['level'.$i]),array('id' => $assess));
 
 }else{
-	insert_record('coursetemplate_levels', (object)array('coursetemplate_id' => $coursetemplate_id,'rubric_no' => 0,'level_val'=>$_POST['level'.$i],'level_desc'=>$str),'id',true);
+	insert_record('coursetemplate_prerequisites', (object)array('coursetemplate_id' => $coursetemplate_id,'rubric_no' => 0,'prerequisite_val'=>$_POST['level'.$i],'prerequisite_desc'=>$_POST['level'.$i]),'id',true);
 }
 db_commit();
 }
@@ -393,10 +427,10 @@ db_commit();
 }
 }
 if($cntnos > 0){
- $SESSION->add_ok_msg('coursetemplate Levels Updated');
+ $SESSION->add_ok_msg('Coursetemplate Pre-Reqs Updated');
 }
 
-if(isset($_POST['savelevels'])) {
+if(isset($_POST['saveprereqs'])) {
     redirect(get_config('wwwroot').'coursetemplate/edit.php?coursetemplate=' . $coursetemplate_id.'&offset=' .$offset . '&main_offset=' .$main_offset);
 }else{
 if($cntnos == 4){

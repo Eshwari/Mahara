@@ -112,7 +112,7 @@ $smarty->assign('COURSETEMPLATENAV','');
 if($listcoursetemplates){
 	$smarty->assign('PAGEHEADING', 'Course Templates');
 }else{
-	$smarty->assign('PAGEHEADING', 'Degree Program');
+	$smarty->assign('PAGEHEADING', 'Graduate Program');
 }
 }
 $smarty->display('coursetemplate/coursetemplates.tpl');
