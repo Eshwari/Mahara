@@ -4,8 +4,8 @@
 {/if}  
     		{$createcoursetemplate}
 
-		{if $add_prerequisites}
-		{$add_prerequisites}
+		{if $addprerequisites}
+		{$addprerequisites}
 		{$pagination}
 		{/if}
 

@@ -27,9 +27,9 @@
 
 define('INTERNAL', 1);
 define('PUBLIC', 1);
-define('MENUITEM', 'coursetemplates/info');
+define('MENUITEM', 'courseoutcomes/info');
 require(dirname(dirname(__FILE__)) . '/init.php');
-require_once('coursetemplate.php');
+require_once('courseoutcome.php');
 require_once('group.php');
 require_once('searchlib.php');
 require_once(get_config('docroot') . 'interaction/lib.php');
@@ -40,33 +40,33 @@ if (!$USER->is_logged_in()) {
     throw new AccessDeniedException();
 }
 
-$coursetemplate_id = param_integer('coursetemplate');
+$courseoutcome_id = param_integer('courseoutcome');
 $offset= param_integer('offset',0);
 
-$outrec = is_coursetemplate_available($coursetemplate_id);
+$outrec = is_courseoutcome_available($courseoutcome_id);
 
 if (!$outrec) {
-    throw new AccessDeniedException("coursetemplate does not exist");
+    throw new AccessDeniedException("Courseoutcome does not exist");
 }
 
-if($outrec->main_coursetemplate){
+if($outrec->main_courseoutcome){
 
 }
 $outlevelsdes  = '';
 if($outrec->eval_type == 'Level'){
-$coursetemplatelevels = @get_records_sql_array(
+$courseoutcomelevels = @get_records_sql_array(
 	'SELECT *
-	  FROM {coursetemplate_levels} 
-        WHERE coursetemplate_id = ?
+	  FROM {courseoutcome_levels} 
+        WHERE courseoutcome_id = ?
 	  AND rubric_no = 0
 	  ORDER BY level_val',
-	array($coursetemplate_id)
+	array($courseoutcome_id)
 );
-foreach($coursetemplatelevels as $coursetemplatelevel){
-	$outlevelsdes = $outlevelsdes .'<br/><b>Level' . $coursetemplatelevel->level_val . '</b>:'. $coursetemplatelevel->level_desc;
+foreach($courseoutcomelevels as $courseoutcomelevel){
+	$outlevelsdes = $outlevelsdes .'<br/><b>Level' . $courseoutcomelevel->level_val . '</b>:'. $courseoutcomelevel->level_desc;
 }
 }else{
-$outlevelsdes = '<b>coursetemplate Evaluation</b> ' . $outrec->eval_type;
+$outlevelsdes = '<b>Courseoutcome Evaluation</b> ' . $outrec->eval_type;
 }
 
 if($outrec->special_access){
@@ -75,16 +75,16 @@ $primary_name = $primary_focus->primary_focus_name;
 }else{
 $primary_name = "";
 }
-define('TITLE', $outrec->coursetemplate_name);
+define('TITLE', $outrec->courseoutcome_name);
 
 
 $smarty = smarty();
 $smarty->assign('outrec',$outrec);
-$smarty->assign('PAGEHEADING', $outrec->coursetemplate_name);
-$smarty->assign('main_coursetemplate',$outrec->main_coursetemplate);
+$smarty->assign('PAGEHEADING', $outrec->courseoutcome_name);
+$smarty->assign('main_courseoutcome',$outrec->main_courseoutcome);
 $smarty->assign('primary_name',$primary_name);
 $smarty->assign('outlevelsdes',$outlevelsdes);
-$smarty->assign('COURSETEMPLATE', coursetemplate_get_menu_tabs($coursetemplate_id));
-$smarty->display('coursetemplate/view.tpl');
+$smarty->assign('COURSEOUTCOMENAV', courseoutcome_get_menu_tabs($courseoutcome_id));
+$smarty->display('courseoutcome/view.tpl');
 
 ?>

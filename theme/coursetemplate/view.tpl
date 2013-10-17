@@ -3,11 +3,11 @@
 <div class="group-info">
 
 <ul>
-{if $outrec->course_description}
-	<li>{$outrec->course_description}</li>
+{if $outrec->description}
+	<li>{$outrec->description}</li>
 {/if}
-{if $outlevelsdes}
-	<li>{$outlevelsdes}</li>
+{if $outprereqsdes}
+	<li>{$outprereqsdes}</li>
 {/if}
 {if $primary_name}
 	<li> <b>Primary Focus Area : </b> {$primary_name}</li>
