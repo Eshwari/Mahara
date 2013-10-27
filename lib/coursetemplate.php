@@ -52,16 +52,7 @@ if(!$outrec || $outrec->deleted == 1){
 
 }
 
-function is_rubric_available($rubricid) {
-$rubrec = get_record('course_rubrics','id',$rubricid);
-if(!$rubrec || $rubrec->deleted == 1){
-	$notfound = array();
-	return $notfound;
-}else{
-	return $rubrec;
-}
 
-}
 
 function can_create_coursetemplates() {
     global $USER;
@@ -106,7 +97,7 @@ function get_coursetemplates($limit=20, $offset=0, $coursetemplateid=0, $course=
 
 }
 
-
+/*
 function get_rubrics($limit=20, $offset=0, $coursetemplateid=0) {
 
     if(!$coursetemplateid){
@@ -132,14 +123,15 @@ function get_rubrics($limit=20, $offset=0, $coursetemplateid=0) {
     return array('rubrics' => $rubrics, 'count' => $count);
 
 }
+*/
 
-function get_coursetemplate_levels($offset=0, $limit=4, $coursetemplateid, $rubric_no) {
+function get_coursetemplate_prerequisites($offset=0, $limit=4, $coursetemplateid, $rubric_no) {
 
 $sql = 'SELECT *
-	  FROM {coursetemplate_levels} 
+	  FROM {coursetemplate_prerequisites} 
         WHERE coursetemplate_id = ?
-	  AND rubric_no = ?
-	  ORDER BY level_val';
+		AND rubric_no = ?
+	    ORDER BY prerequisite_val';
     
     $values = array($coursetemplateid, $rubric_no);
     $coursetemplates = get_records_sql_assoc($sql, $values, $offset, $limit);
@@ -153,13 +145,41 @@ $sql = 'SELECT *
 
 function find_last_offset($limit, $coursetemplateid, $rubric_no){
 	$values = array($coursetemplateid, $rubric_no);
- 	$countlvls = count_records_sql('SELECT COUNT(*) FROM {coursetemplate_levels} WHERE coursetemplate_id = ? AND rubric_no = ?', $values);
+ 	$countlvls = count_records_sql('SELECT COUNT(*) FROM {coursetemplate_prerequisites} WHERE coursetemplate_id = ? AND rubric_no = ?', $values);
 
 	$pages = ceil($countlvls/$limit);
 	$last_offset = ($pages-1)*$limit;
 	return array('last_offset' => $last_offset, 'count' => $countlvls);
 }
+function coursetemplate_get_menu_tabs($coursetemplate_id=0) {
+static $menu;
+global $USER;
+    $menu = array(
+        'info' => array(
+            'path' => 'coursetemplates/info',
+            'url' => 'coursetemplate/view.php?coursetemplate='.$coursetemplate_id,
 
+            'title' => 'About',
+            'weight' => 20
+        ),
+	);
+	if($USER->get('admin') || $courseoutcomes){ 
+    $menu['rubrics'] = array(
+            'path' => 'courseoutcomes/courseoutcomes',
+            'url' => 'coursetemplate/createcourseoutcome.php?coursetemplate='.$coursetemplate_id,
+			'title' => 'Courseoutcomes',
+            'weight' => 30
+        );
+}
+	if (defined('MENUITEM')) {
+        $key = substr(MENUITEM, strlen('coursetemplates/'));
+        if ($key && isset($menu[$key])) {
+            $menu[$key]['selected'] = true;
+        }
+    }
+return $menu;
+}
+/*
 function coursetemplate_get_menu_tabs($coursetemplate_id=0) {
 static $menu;
 global $USER;
@@ -171,6 +191,7 @@ global $USER;
             'weight' => 20
         ),
 	);
+
 if(!$USER->get('admin')){
 $rubrics = @get_records_sql_array(
     'SELECT id
@@ -195,6 +216,7 @@ if($USER->get('admin') || $rubrics){
             'weight' => 30
         );
 }
+
 if($USER->get('admin') || $subcoursetemplates){
       $menu['subcoursetemplates'] = array(
             'path' => 'coursetemplates/subcoursetemplates',
@@ -210,7 +232,17 @@ if($USER->get('admin')){
             'title' => 'Primary',
             'weight' => 30
         );
+} 
+//start-eshwari 
+if($USER->get('admin') ){ 
+    $menu['courseoutcomes'] = array(
+            'path' => 'coursetemplates/courseoutcomes',
+            'url' => 'coursetemplate/courseoutcomes.php?coursetemplate='.$coursetemplate_id,
+            'title' => 'course outcomes',
+            'weight' => 30
+        );
 }
+//end-eshwari
     if (defined('MENUITEM')) {
         $key = substr(MENUITEM, strlen('coursetemplates/'));
         if ($key && isset($menu[$key])) {
@@ -239,5 +271,27 @@ global $USER;
     }
 return $menu;
 }
+*/
+//start -eshwari
+function courseoutcomes_get_menu_tabs($coursetemplate_id=0, $rubric_id=0) {
+static $menu;
+global $USER;
+    $menu = array(
+        'info' => array(
+            'path' => 'coursetemplates/rubrics/info',
+            'url' => 'coursetemplate/rubricview.php?coursetemplate='.$coursetemplate_id .'&rubric=' . $rubric_id,
+            'title' => 'About',
+            'weight' => 20
+        ),
+	);
+    if (defined('MENUITEM')) {
+        $key = substr(MENUITEM, strlen('coursetemplates/rubrics/'));
+        if ($key && isset($menu[$key])) {
+            $menu[$key]['selected'] = true;
+        }
+    }
+return $menu;
+}
+//end-eshawrai
 
 ?>

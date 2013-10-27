@@ -4,14 +4,21 @@
 
 <ul>
 {if $outrec->description}
-	<li>{$outrec->description}</li>
+	<ul><b>Description: </b>{$outrec->description}</ul>
+{/if}
+{if $outrec->college_offering}
+	<ul><b>Collge Offering: </b>{$outrec->college_offering}</ul>
+{/if}
+{if $outrec->dept_offering}
+	<li><b>Department: </b>{$outrec->dept_offering}</li>
+{/if}
+{if $outrec->degree_id}
+	<li><b>Degree </b>{$outrec->degree_id}</li>
 {/if}
 {if $outprereqsdes}
 	<li>{$outprereqsdes}</li>
 {/if}
-{if $primary_name}
-	<li> <b>Primary Focus Area : </b> {$primary_name}</li>
-{/if}
+
 
 </ul>
 

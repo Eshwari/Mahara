@@ -53,7 +53,7 @@ if(!$outrec || $outrec->deleted == 1){
 }
 
 function is_rubric_available($rubricid) {
-$rubrec = get_record('rubrics','id',$rubricid);
+$rubrec = get_record('course_rubrics','id',$rubricid);
 if(!$rubrec || $rubrec->deleted == 1){
 	$notfound = array();
 	return $notfound;
@@ -116,14 +116,14 @@ function get_rubrics($limit=20, $offset=0, $courseoutcomeid=0) {
     $values = array($courseoutcomeid);
     $rubrics =  @get_records_sql_array(
 	'SELECT *
-		FROM {rubrics}
+		FROM {course_rubrics}
 		WHERE courseoutcome_id = ?
 		AND deleted != 1
 		LIMIT ?,?',
 	array($courseoutcomeid,$offset,$limit)
     );
     
- $count = count_records_sql('SELECT COUNT(*) FROM {rubrics} WHERE courseoutcome_id = ? AND deleted != 1', $values);
+ $count = count_records_sql('SELECT COUNT(*) FROM {course_rubrics} WHERE courseoutcome_id = ? AND deleted != 1', $values);
 
     if (!$courseoutcomes) {
         $courseoutcomes = array();
@@ -151,7 +151,7 @@ $sql = 'SELECT *
     return $courseoutcomes;
 }
 
-function find_last_offset($limit, $courseoutcomeid, $rubric_no){
+function find_last_offset_courseoutcome($limit, $courseoutcomeid, $rubric_no){
 	$values = array($courseoutcomeid, $rubric_no);
  	$countlvls = count_records_sql('SELECT COUNT(*) FROM {courseoutcome_levels} WHERE courseoutcome_id = ? AND rubric_no = ?', $values);
 
@@ -171,10 +171,11 @@ global $USER;
             'weight' => 20
         ),
 	);
+
 if(!$USER->get('admin')){
 $rubrics = @get_records_sql_array(
     'SELECT id
-       FROM {rubrics}
+       FROM {course_rubrics}
        WHERE courseoutcome_id = ?
 	 AND deleted = 0',
     array($courseoutcome_id)
@@ -186,7 +187,8 @@ $subcourseoutcomes = @get_records_sql_array(
 	 AND deleted = 0',
     array($courseoutcome_id)
 );
-} 
+}
+
 if($USER->get('admin') || $rubrics){ 
     $menu['rubrics'] = array(
             'path' => 'courseoutcomes/rubrics',
@@ -195,6 +197,7 @@ if($USER->get('admin') || $rubrics){
             'weight' => 30
         );
 }
+/*
 if($USER->get('admin') || $subcourseoutcomes){
       $menu['subcourseoutcomes'] = array(
             'path' => 'courseoutcomes/subcourseoutcomes',
@@ -203,6 +206,7 @@ if($USER->get('admin') || $subcourseoutcomes){
             'weight' => 30
         );
 }
+
 if($USER->get('admin')){
       $menu['primary'] = array(
             'path' => 'courseoutcomes/primary',
@@ -210,7 +214,7 @@ if($USER->get('admin')){
             'title' => 'Primary',
             'weight' => 30
         );
-}
+}*/
     if (defined('MENUITEM')) {
         $key = substr(MENUITEM, strlen('courseoutcomes/'));
         if ($key && isset($menu[$key])) {
