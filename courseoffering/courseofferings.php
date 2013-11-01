@@ -95,7 +95,7 @@ $pagination = build_pagination(array(
 
 
 printf($course_id);
-
+$coursetemplatedes = get_coursetemplate_name($course_id);
 
 //start -eshwari
 

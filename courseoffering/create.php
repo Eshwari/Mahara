@@ -58,7 +58,10 @@ if($courseoffering_id == 0){
 //start-Eshwari
 $course_id = param_integer('coursetemplate',0);
 printf($course_id);
+$coursetemplatedes = get_coursetemplate_name($course_id);
 //end-eshwari
+
+printf($course_id);
 
 
 //college offering type
@@ -87,19 +90,21 @@ $prerequisitetype= array();
 //$prerequisitetype['prerequisitetype'] ='Select one';
 $prerequisitetype['Prereq'] ='Prereqs';
 $prerequisitetype['NoPrereq'] = 'NoPrereq';
-
+printf($course_id);
 $coursetmps = @get_records_sql_array(
 	'SELECT id, coursetemplate_name
-		FROM {course_template}',
+		FROM {course_template}
+		WHERE id = course_id',
 	array()
 );
-
+/*
 $coursetemplates = array();
-$coursetemplates['CourseTemplate'] = 'Select a Course Template';
+//$coursetemplates['CourseTemplate'] = 'Select a Course Template';
 foreach($coursetmps as $coursetmp){
 	$coursetemplates[$coursetmp->id] = $coursetmp->coursetemplate_name;
 }
-var $coursetemplates_; 
+*/
+ 
 $createcourseoffering = array(
     'name'     => 'createcourseoffering',
     'method'   => 'post',
@@ -124,6 +129,19 @@ $createcourseoffering = array(
 			'options'      =>  $semestertype,
 			'defaultyvalue'=>  'Select a Semester',
         );
+		/* $createcourseoffering['elements']['coursetemplate'] = array(
+            'type'         => 'select',
+            'title'        => 'Course Template',
+            'options'      => $coursetemplates,
+			'defaultvalue' => $coursetemplatedes->coursetemplate_name,
+        );
+		*/
+		$createcourseoffering['elements']['coursetemplate'] = array(
+            'type'         => 'text',
+           'title'        => 'Course Template',
+		   'options'      => $coursetemplates,
+		   'defaultvalue' => $coursetemplatedes->coursetemplate_name,
+        );
 		 
 		
 
@@ -136,14 +154,7 @@ if($courseoffering_id == 0){
 }
 
 
-       $createcourseoffering['elements']['coursetemplate'] = array(
-            'type'         => 'select',
-            'title'        => 'Course Template',
-            'options'      => $coursetemplates,
-		'disabled' 	   => $disable,
-		//'defaultvalue' => $default,
-		'defaultvalue' => $courseofferingdes->coursetmp_id,
-        );
+      
 /*
 $createcourseoffering['elements']['prerequisitetype'] = array(
             'type'         => 'select',
