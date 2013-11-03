@@ -51,6 +51,17 @@ if(!$outrec || $outrec->deleted == 1){
 }
 
 }
+//Eshwari -start
+function get_courseoutcome_name($_id){
+$outrec2 = get_record('dept_courses','id',$_id);
+if(!$outrec2 || $outrec2->deleted == 1){
+	$notfound = array();
+	return $notfound;
+}else{
+	return $outrec2;
+}
+}
+//eshwari -end
 
 
 

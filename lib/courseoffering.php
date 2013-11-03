@@ -52,8 +52,8 @@ if(!$outrec || $outrec->deleted == 1){
 
 }
 //Eshwari -start
-function get_coursetemplate_name($courseid){
-$outrec2 = get_record('course_template','id',$courseid);
+function get_coursetemplate_name($_id){
+$outrec2 = get_record('course_template','id',$_id);
 if(!$outrec2 || $outrec2->deleted == 1){
 	$notfound = array();
 	return $notfound;
