@@ -51,6 +51,17 @@ if(!$outrec || $outrec->deleted == 1){
 }
 
 }
+function is_prerequisite_available($prerequisiteid) {
+$outrec = get_record('coursetemplate_prerequisite','id',$prerequisiteid);
+if(!$outrec || $outrec->deleted == 1){
+	$notfound = array();
+	return $notfound;
+}else{
+	return $outrec;
+}
+
+}
+
 //Eshwari -start
 function get_courseoutcome_name($_id){
 $outrec2 = get_record('dept_courses','id',$_id);
@@ -174,6 +185,7 @@ global $USER;
             'weight' => 20
         ),
 	);
+
 	if($USER->get('admin') || $courseoutcomes){ 
     $menu['rubrics'] = array(
             'path' => 'courseoutcomes/courseoutcomes',

@@ -62,6 +62,16 @@ if(!$outrec2 || $outrec2->deleted == 1){
 }
 }
 //eshwari -end
+function get_courseoutcomes($_id){
+
+$outrec1 = get_record('courseoutcomes','id',$_id);
+if(!$outrec1 || $outrec1->deleted == 1){
+	$notfound = array();
+	return $notfound;
+}else{
+	return $outrec2;
+	}
+  }
 
 
 function can_create_courseofferings() {
@@ -107,33 +117,6 @@ function get_courseofferings($limit=20, $offset=0, $courseofferingid=0 , $course
 
 }
 
-/*
-function get_rubrics($limit=20, $offset=0, $courseofferingid=0) {
-
-    if(!$courseofferingid){
-	$courseofferingid = 0;
-    }
-    
-    $values = array($courseofferingid);
-    $rubrics =  @get_records_sql_array(
-	'SELECT *
-		FROM {course_rubrics}
-		WHERE courseoffering_id = ?
-		AND deleted != 1
-		LIMIT ?,?',
-	array($courseofferingid,$offset,$limit)
-    );
-    
- $count = count_records_sql('SELECT COUNT(*) FROM {course_rubrics} WHERE courseoffering_id = ? AND deleted != 1', $values);
-
-    if (!$courseofferings) {
-        $courseofferings = array();
-    }
-
-    return array('rubrics' => $rubrics, 'count' => $count);
-
-}
-*/
 
 function get_courseoffering_prerequisites($offset=0, $limit=4, $courseofferingid, $rubric_no) {
 
@@ -153,14 +136,8 @@ $sql = 'SELECT *
     return $courseofferings;
 }
 
-function find_last_offset($limit, $courseofferingid, $rubric_no){
-	$values = array($courseofferingid, $rubric_no);
- 	$countlvls = count_records_sql('SELECT COUNT(*) FROM {courseoffering_prerequisites} WHERE courseoffering_id = ? AND rubric_no = ?', $values);
 
-	$pages = ceil($countlvls/$limit);
-	$last_offset = ($pages-1)*$limit;
-	return array('last_offset' => $last_offset, 'count' => $countlvls);
-}
+
 function courseoffering_get_menu_tabs($courseoffering_id=0) {
 static $menu;
 global $USER;
@@ -173,14 +150,27 @@ global $USER;
             'weight' => 20
         ),
 	);
+	
 	if($USER->get('admin') || $courseofferings){ 
-    $menu['rubrics'] = array(
-            'path' => 'courseofferings/courseofferings',
-            'url' => 'courseoffering/createcourseofferings.php?courseoffering='.$courseoffering_id,
-			'title' => 'courseofferings',
+    $menu['addstudents'] = array(
+            'path' => 'courseofferings/addstudents',
+            'url' => 'courseoffering/addstudents.php?courseoffering='.$courseoffering_id,
+			'title' => 'Add Students',
             'weight' => 30
         );
 }
+	if($USER->get('admin') || $courseofferings){ 
+    $menu['addfaculty'] = array(
+            'path' => 'courseofferings/addfaculty',
+            'url' => 'courseoffering/addfaculty.php?courseoffering='.$courseoffering_id,
+
+
+			'title' => 'Add Faculty',
+            'weight' => 30
+        );
+}
+
+
 	if (defined('MENUITEM')) {
         $key = substr(MENUITEM, strlen('courseofferings/'));
         if ($key && isset($menu[$key])) {
@@ -189,71 +179,43 @@ global $USER;
     }
 return $menu;
 }
-/*
-function courseoffering_get_menu_tabs($courseoffering_id=0) {
+function addfaculty_get_menu_tabs($addfaculty_id=0) {
 static $menu;
 global $USER;
     $menu = array(
         'info' => array(
             'path' => 'courseofferings/info',
-            'url' => 'courseoffering/view.php?courseoffering='.$courseoffering_id,
-            'title' => 'About',
+            'url' => 'courseoffering/addfaculty.php?courseoffering='.$addfaculty_id,
+
+
+            'title' => 'Abou',
             'weight' => 20
         ),
 	);
+	
+	if($USER->get('admin') || $courseofferings){ 
+    $menu['addstudents'] = array(
+            'path' => 'courseofferings/addfaculty',
+            'url' => 'courseoffering/addfaculty.php?courseoffering='.$addfaculty_id,
 
-if(!$USER->get('admin')){
-$rubrics = @get_records_sql_array(
-    'SELECT id
-       FROM {course_rubrics}
-       WHERE courseoffering_id = ?
-	 AND deleted = 0',
-    array($courseoffering_id)
-);
-$subcourseofferings = @get_records_sql_array(
-    'SELECT id
-       FROM {courseoffering}
-       WHERE main_courseoffering = ?
-	 AND deleted = 0',
-    array($courseoffering_id)
-);
-} 
-if($USER->get('admin') || $rubrics){ 
-    $menu['rubrics'] = array(
-            'path' => 'courseofferings/rubrics',
-            'url' => 'courseoffering/rubrics.php?courseoffering='.$courseoffering_id,
-            'title' => 'Rubrics',
+
+			'title' => 'Add Faculty',
+            'weight' => 30
+        );
+}
+	if($USER->get('admin') || $courseofferings){ 
+    $menu['addfaculty'] = array(
+            'path' => 'courseofferings/addfaculty',
+            'url' => 'courseoffering/addfaculty.php?courseoffering='.$courseoffering_id,
+
+
+			'title' => 'Add Faculty',
             'weight' => 30
         );
 }
 
-if($USER->get('admin') || $subcourseofferings){
-      $menu['subcourseofferings'] = array(
-            'path' => 'courseofferings/subcourseofferings',
-            'url' => 'courseoffering/courseofferings.php?courseoffering='.$courseoffering_id,
-            'title' => 'Sub courseofferings',
-            'weight' => 30
-        );
-}
-if($USER->get('admin')){
-      $menu['primary'] = array(
-            'path' => 'courseofferings/primary',
-            'url' => 'courseoffering/primary.php?courseoffering='.$courseoffering_id,
-            'title' => 'Primary',
-            'weight' => 30
-        );
-} 
-//start-eshwari 
-if($USER->get('admin') ){ 
-    $menu['courseoutcomes'] = array(
-            'path' => 'courseofferings/courseoutcomes',
-            'url' => 'courseoffering/courseoutcomes.php?courseoffering='.$courseoffering_id,
-            'title' => 'course outcomes',
-            'weight' => 30
-        );
-}
-//end-eshwari
-    if (defined('MENUITEM')) {
+
+	if (defined('MENUITEM')) {
         $key = substr(MENUITEM, strlen('courseofferings/'));
         if ($key && isset($menu[$key])) {
             $menu[$key]['selected'] = true;
@@ -262,46 +224,8 @@ if($USER->get('admin') ){
 return $menu;
 }
 
-function rubric_get_menu_tabs($courseoffering_id=0, $rubric_id=0) {
-static $menu;
-global $USER;
-    $menu = array(
-        'info' => array(
-            'path' => 'courseofferings/rubrics/info',
-            'url' => 'courseoffering/rubricview.php?courseoffering='.$courseoffering_id .'&rubric=' . $rubric_id,
-            'title' => 'About',
-            'weight' => 20
-        ),
-	);
-    if (defined('MENUITEM')) {
-        $key = substr(MENUITEM, strlen('courseofferings/rubrics/'));
-        if ($key && isset($menu[$key])) {
-            $menu[$key]['selected'] = true;
-        }
-    }
-return $menu;
-}
-*/
-//start -eshwari
-function courseoutcomes_get_menu_tabs($courseoffering_id=0, $rubric_id=0) {
-static $menu;
-global $USER;
-    $menu = array(
-        'info' => array(
-            'path' => 'courseofferings/rubrics/info',
-            'url' => 'courseoffering/rubricview.php?courseoffering='.$courseoffering_id .'&rubric=' . $rubric_id,
-            'title' => 'About',
-            'weight' => 20
-        ),
-	);
-    if (defined('MENUITEM')) {
-        $key = substr(MENUITEM, strlen('courseofferings/rubrics/'));
-        if ($key && isset($menu[$key])) {
-            $menu[$key]['selected'] = true;
-        }
-    }
-return $menu;
-}
-//end-eshawrai
+
+
+
 
 ?>

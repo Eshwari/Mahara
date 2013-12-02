@@ -269,6 +269,8 @@ function group_create($data) {
         'id',
         true
     );*/
+	
+	//Start -Eshwari added courseoutcome
 	    $id = insert_record(
         'group',
         (object) array(
@@ -282,6 +284,8 @@ function group_create($data) {
             'usersautoadded' => $data['usersautoadded'],
 			'outcome'        => $data['outcome'],
 			'courseoutcome'  => $data['courseoutcome'],
+			'coursetemplate'  => $data['coursetemplate'],
+			'courseoffering'  => $data['courseoffering'],
 			'parent_group'   => $data['parent_group'],
         ),
         'id',
@@ -876,13 +880,33 @@ function group_get_menu_tabs() {
 	if($group->courseoutcome){
 		$groupcoursemem = get_record('group_member','member',$USER->get('id'),'group',$group->id);
 	}
-	//End-Eshwari
 	
+	//End-Eshwari
+	//Start-Eshwari
+	
+	if($group->courseoffering){
+		$groupofferingmem = get_record('group_member','member',$USER->get('id'),'group',$group->id);
+	}
+	
+	/*
     $menu = array(
+        'info' => array(
+            'path' => 'coursetemplate/info',
+            'url' => 'coursetemplate/view.php?id='.$group->id,
+
+            'title' => 'About',
+            'weight' => 20
+        ),
+	);
+	*/
+	//End-Eshwari
+	 $menu = array(
         'info' => array(
             'path' => 'groups/info',
             'url' => 'group/view.php?id='.$group->id,
             'title' => get_string('About', 'group'),
+
+
             'weight' => 20
         ),
 	);
@@ -929,8 +953,39 @@ function group_get_menu_tabs() {
 
 	}
 	
-	//End-Eshwari
+	if($groupofferingmem){
+		if($groupofferingmem->role != "member"){
+			$menu['members'] = array(
+				'path' => 'groups/members',
+				'url' => 'group/members.php?id='.$group->id,
+				'title' => get_string('Members', 'group'),
+				'weight' => 30
+			);	
+		}
+	}else{
+
+		$menu['members'] = array(
+
+				'path' => 'groups/members',
+				'url' => 'group/members.php?id='.$group->id,
+				'title' => get_string('Members', 'group'),
+				'weight' => 30
+		);
+
+	}
 	
+	
+	//End-Eshwari
+	/*
+	//Start of subgroup logic by Shashank
+	$menu['subgroups'] = array(
+				'path' => 'coursetemplate/subgroups',
+				'url' => 'coursetemplate/subgroups.php?id='.$group->id,
+				'title' => 'Sub Template',
+				'weight' => 35
+		);
+	//End of subgroup logic by Shashank
+	*/
 	//Start of subgroup logic by Shashank
 	$menu['subgroups'] = array(
 				'path' => 'groups/subgroups',
@@ -938,7 +993,7 @@ function group_get_menu_tabs() {
 				'title' => 'Sub Groups',
 				'weight' => 35
 		);
-	//End of subgroup logic by Shashank
+//End of subgroup logic by Shashank
 //End-Anusha	
     if ($group->public || group_user_access($group->id)) {
         $menu['forums'] = array(  // @todo: get this from a function in the interaction plugin (or better, make forums an artefact plugin)
@@ -948,10 +1003,21 @@ function group_get_menu_tabs() {
             'weight' => 40,
         );
     }
+	/*
     $menu['views'] = array(
+        'path' => 'coursetemplate/views',
+        'url' => 'view/groupviews.php?group='.$group->id,
+
+        'title' => 'Views',
+        'weight' => 50,
+    );
+	*/
+	 $menu['views'] = array(
         'path' => 'groups/views',
         'url' => 'view/groupviews.php?group='.$group->id,
         'title' => get_string('Views', 'group'),
+
+
         'weight' => 50,
     );
 //Start-Anusha
@@ -965,10 +1031,120 @@ if($group->outcome){
 }
 //End-Anusha
 //Start-Eshwari
+
 if($group->courseoutcome){
     $menu['courseoutcome'] = array(
-        'path' => 'groups/courseoutcomes',
-        'url' => 'group/groupcourseoutcome.php?group='.$group->id,
+        'path' => 'groups/courseofferings',
+        'url' => 'group/groupcourseoffering.php?group='.$group->id,
+        'title' => 'Course offering Outcome Results',
+        'weight' => 60,
+    );
+}
+//End-Eshwari
+
+
+    if (group_user_access($group->id)) {
+        safe_require('grouptype', $group->grouptype);
+        $artefactplugins = call_static_method('GroupType' . $group->grouptype, 'get_group_artefact_plugins');
+        if ($plugins = get_records_array('artefact_installed', 'active', 1)) {
+            foreach ($plugins as &$plugin) {
+                if (!in_array($plugin->name, $artefactplugins)) {
+                    continue;
+                }
+                safe_require('artefact', $plugin->name);
+                $plugin_menu = call_static_method(generate_class_name('artefact',$plugin->name), 'group_tabs', $group->id);
+                $menu = array_merge($menu, $plugin_menu);
+            }
+        }
+    }
+
+    if (defined('MENUITEM')) {
+        $key = substr(MENUITEM, strlen('groups/'));
+        if ($key && isset($menu[$key])) {
+            $menu[$key]['selected'] = true;
+        }
+    }
+
+    return $menu;
+}
+/*
+//start -eshwari
+function coursetemplate_get_menu_tabs() {
+    global $USER;
+    static $menu;
+	
+    $group = group_current_group();
+    if (!$group) {
+        return null;
+    }
+	
+	
+	//Start-Eshwari
+	if($group->courseoutcome){
+		$groupcoursemem = get_record('group_member','member',$USER->get('id'),'group',$group->id);
+	}
+	//End-Eshwari
+	
+    $menu = array(
+        'info' => array(
+            'path' => 'coursetemplate/info',
+            'url' => 'coursetemplate/viewcourse.php?id='.$group->id,
+            'title' => 'About',
+            'weight' => 20
+        ),
+	);
+
+
+	if($groupcoursemem){
+		if($groupcoursemem->role != "member"){
+			$menu['members'] = array(
+				'path' => 'coursetemplate/members',
+				'url' => 'coursetemplate/members.php?id='.$group->id,
+				'title' => 'Members',
+				'weight' => 30
+			);	
+		}
+	}else{
+
+		$menu['members'] = array(
+
+				'path' => 'coursetemplate/members',
+				'url' => 'coursetemplate/members.php?id='.$group->id,
+				'title' => 'Members',
+				'weight' => 30
+		);
+
+	}
+	
+		//Start of subgroup logic by Shashank
+	$menu['subgroups'] = array(
+				'path' => 'coursetemplate/subgroups',
+				'url' => 'coursetemplate/subgroups.php?id='.$group->id,
+				'title' => 'Sub Template',
+				'weight' => 35
+		);
+	//End of subgroup logic by Shashank
+//End-Anusha	
+    if ($group->public || group_user_access($group->id)) {
+        $menu['forums'] = array(  // @todo: get this from a function in the interaction plugin (or better, make forums an artefact plugin)
+            'path' => 'groups/forums',
+            'url' => 'interaction/forum/index.php?group='.$group->id,
+            'title' => get_string('nameplural', 'interaction.forum'),
+            'weight' => 40,
+        );
+    }
+    $menu['views'] = array(
+        'path' => 'coursetemplate/views',
+        'url' => 'view/groupviews.php?group='.$group->id,
+        'title' => get_string('Views', 'group'),
+        'weight' => 50,
+    );
+
+//Start-Eshwari
+if($group->courseoutcome){
+    $menu['courseoutcome'] = array(
+        'path' => 'coursetemplate/courseoutcomes',
+        'url' => 'coursetemplate/groupcourseoutcome.php?group='.$group->id,
         'title' => 'Course Outcome Results',
         'weight' => 60,
     );
@@ -999,7 +1175,8 @@ if($group->courseoutcome){
 
     return $menu;
 }
-
+*/
+//end -eshwari
 /**
  * Used by this file to perform validation of group ID function arguments
  *
@@ -1230,9 +1407,10 @@ function group_get_associated_groups($userid, $filter='all', $limit=20, $offset=
         LEFT JOIN {group_member_request} gmr ON (gmr.group = g1.id)
         GROUP BY g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.membershiptype, g1.reason, g1.role, g1.membercount';
     */
-	    $sql = 'SELECT g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.outcome, g1.membershiptype, g1.reason, g1.role, g1.membercount, COUNT(gmr.member) AS requests
+	//start -Eshwari added g1.courseoffering,g.courseoffering,
+	    $sql = 'SELECT g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.outcome,g1.courseoffering,  g1.membershiptype, g1.reason, g1.role, g1.membercount, COUNT(gmr.member) AS requests
         FROM (
-        SELECT g.id, g.name, g.description, g.jointype, g.grouptype, g.outcome, t.membershiptype, t.reason, t.role, COUNT(gm.member) AS membercount
+        SELECT g.id, g.name, g.description, g.jointype, g.grouptype, g.outcome,g.courseoffering, t.membershiptype, t.reason, t.role, COUNT(gm.member) AS membercount
             FROM {group} g
             LEFT JOIN {group_member} gm ON (gm.group = g.id)' .
             $sql . '
@@ -1241,7 +1419,7 @@ function group_get_associated_groups($userid, $filter='all', $limit=20, $offset=
             ORDER BY g.name
         ) g1
         LEFT JOIN {group_member_request} gmr ON (gmr.group = g1.id)
-        GROUP BY g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.outcome, g1.membershiptype, g1.reason, g1.role, g1.membercount';
+        GROUP BY g1.id, g1.name, g1.description, g1.jointype, g1.grouptype, g1.outcome,g1.courseoffering, g1.membershiptype, g1.reason, g1.role, g1.membercount';
 	//End-Anusha
 	
     $groups = get_records_sql_assoc($sql, $values, $offset, $limit);
@@ -1271,6 +1449,7 @@ function group_get_associated_groups($userid, $filter='all', $limit=20, $offset=
     return array('groups' => $groups, 'count' => $count);
 
 }
+
 
 
 function group_get_user_groups($userid=null, $roles=null) {
@@ -1312,4 +1491,17 @@ function group_can_create_groups() {
     }
     return $creators == 'staff' && ($USER->get('staff') || $USER->is_institutional_staff());
 }
+//start-Eshwari
+function group_can_create_coursegroups() {
+    global $USER;
+    $creators = get_config('creategroups');
+    if ($creators == 'all') {
+        return true;
+    }
+    if ($USER->get('admin') || $USER->is_institutional_admin()) {
+        return true;
+    }
+    return $creators == 'staff' && ($USER->get('staff') || $USER->is_institutional_staff());
+}
+//end
 ?>

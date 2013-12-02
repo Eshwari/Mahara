@@ -1,3 +1,4 @@
+incomplete
 <?php
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
@@ -35,7 +36,7 @@ define('GROUP', param_integer('group'));
 $groupid = param_integer('group');
 
 $group = get_record_sql(
-    'SELECT g.id, g.name, g.grouptype, g.courseoutcome, u.role
+    'SELECT g.id, g.name, g.grouptype, g.courseoffering, u.role
        FROM {group_member} u
        INNER JOIN {group} g ON (u.group = g.id AND g.deleted = 0)
        INNER JOIN {grouptype} gt ON gt.name = g.grouptype
@@ -46,6 +47,8 @@ $group = get_record_sql(
 );
 
 $outname = "";
+//start-Eshwari
+//end-Eshwari
 
 if($group){
 if($group->role != "member"){
@@ -58,7 +61,7 @@ $assessments = @get_records_sql_array(
 	   WHERE v.submittedcourseoutcome = ?
 	   AND o.rubric_no = 0
 	   AND o.submitted = 2',
-    array($group->courseoutcome)
+    array($group->outcome)
 );
 
 }else {
@@ -66,17 +69,17 @@ $assessments = @get_records_sql_array(
 	$assessments = get_record_sql(
 		'SELECT o.final_level,o.public_comments
 		   FROM {view} v 
-		   INNER JOIN {courseoutcome_results} o ON (o.view_id = v.id)
+		   INNER JOIN {outcome_results} o ON (o.view_id = v.id)
 		   WHERE v.owner = ? 
-		   AND v.submittedcourseoutcome = ?
+		   AND v.submittedoutcome = ?
 		   AND o.rubric_no = 0
 		   AND o.submitted = 2',
-		array($USER->get('id'),$group->courseoutcome)
+		array($USER->get('id'),$group->outcome)
 	);
 }
-$courseoutcomedes = get_record('courseoutcomes','id',$group->courseoutcome);
-if($courseoutcomedes){
-	$outname = $courseoutcomedes->courseoutcome_name. ' courseoutcome';
+$outcomedes = get_record('outcomes','id',$group->outcome);
+if($outcomedes){
+	$outname = $outcomedes->outcome_name. ' Outcome';
 }
 }
 
@@ -86,7 +89,7 @@ $smarty = smarty();
 $smarty->assign('PAGEHEADING', hsc(TITLE));
 $smarty->assign('assessments',$assessments);
 $smarty->assign('student',$student);
-$smarty->display('group/groupcourseoutcome.tpl');
+$smarty->display('group/groupoutcome.tpl');
 
 
 ?>

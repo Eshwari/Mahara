@@ -50,10 +50,19 @@ if ($group->outcome && $role == "member") {
 	throw new AccessDeniedException();
 }
 //Anusha
-
+//Eshwari
 if ($group->courseoutcome && $role == "member") {
 	throw new AccessDeniedException();
 }
+
+if ($group->coursetemplate && $role == "member") {
+	throw new AccessDeniedException();
+}
+if ($group->courseoffering && $role == "member") {
+	throw new AccessDeniedException();
+}
+
+//Eshwari
 if (!empty($membershiptype) && $role != 'admin') {
     throw new AccessDeniedException();
 }

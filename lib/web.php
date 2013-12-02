@@ -412,6 +412,15 @@ EOF;
         $smarty->assign('PAGEHEADING', hsc($group->name));
     }
 
+	//start-Eshwari
+	   if (defined('COURSE TEMPLATE')) {
+        require_once('group.php');
+        $group = group_current_group();
+        $smarty->assign('GROUP', $group);
+        $smarty->assign('GROUPNAV', group_get_menu_tabs());
+        $smarty->assign('PAGEHEADING', hsc($group->name));
+    }
+	//end-Eshwari
     // ---------- sideblock stuff ----------
     $sidebars = !isset($extraconfig['sidebars']) || $extraconfig['sidebars'] !== false;
     if ($sidebars && !defined('INSTALLER') && (!defined('MENUITEM') || substr(MENUITEM, 0, 5) != 'admin')) {
@@ -1916,20 +1925,7 @@ function mahara_standard_nav() {
             'title' => get_string('findfriends'),
             'weight' => 40,
         ),
-		//start-Eshwari 
-		array(
-            'path' => 'coursetemplate',
-            'url' => 'coursetemplate/mygroups.php',
-            'title' => get_string('Course Template'),
-            'weight' => 40,
-        ),
-		 array(
-            'path' => 'coursetemplate/mygroups',
-            'url' => 'coursetemplate/mygroups.php',
-            'title' => get_string('mygroups'),
-            'weight' => 10,
-        ),
-		//end-eshwari
+		
 	  //Start - Anusha
         array(
             'path' => 'outcomes',
@@ -1947,18 +1943,42 @@ function mahara_standard_nav() {
 	  //End - Anusha
 	  //start- Eshwari
 
-	array(
+	    array(
             'path' => 'courseoutcomes',
             'url' => 'courseoutcome/courseoutcomes.php',
-            'title' => get_string('Course Outcomes'),
+            'title' => 'Course Outcomes',
             'weight' => 40,
         ),
         array(
             'path' => 'courseoutcomes/courseoutcomes',
             'url' => 'courseoutcome/courseoutcomes.php',
-            'title' => get_string('course outcomes'),
+            'title' => 'Course Outcomes List',
             'weight' => 10,
-        ),	  
+        ),	
+        array(
+            'path' => 'coursetemplates',
+            'url' => 'coursetemplate/coursetemplates.php',
+            'title' => 'Create Courses Templates',
+            'weight' => 40,
+        ),
+        array(
+            'path' => 'coursetemplates/coursetemplates',
+            'url' => 'coursetemplate/coursetemplates.php',
+            'title' => 'Programs List',
+            'weight' => 10,
+        ),	
+       array(
+            'path' => 'courseofferings',
+            'url' => 'courseoffering/courseofferings.php',
+            'title' => 'Create Courses Offerings',
+            'weight' => 40,
+        ),
+        array(
+            'path' => 'courseofferings/courseofferings',
+            'url' => 'courseoffering/courseofferings.php',
+            'title' => 'Course List',
+            'weight' => 10,
+        ),		
 	  //End-Eshwari 
 	);
 	

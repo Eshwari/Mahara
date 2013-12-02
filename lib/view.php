@@ -67,6 +67,7 @@ class View {
 	private $self_level;
 	private $self_describe;
 	public $submittedoutcome;
+	public $submittedcourseoutcome;
 	public $copied;
 	//End-Anusha
 	private $self_level_formative;
@@ -235,9 +236,15 @@ class View {
 		//Start-Anusha
 		// Outcome mapping
         $view->set('submittedoutcome',$template->get('submittedoutcome'));
+		$view->set('submittedcourseoutcome',$template->get('submittedcourseoutcome'));
 		$view->set('group',$template->get('group'));		
 		$view->set('copied',1);
-		//End-Anusha				
+		//End-Anusha		
+
+      // courseOutcome mapping
+       
+		//$view->set('group',$template->get('group'));		
+		//$view->set('copied',1);		
 		
 		//Start of access setting by Shashank
 		$view->set_access(array(array(
@@ -273,7 +280,6 @@ class View {
             global $USER;
             $userid = $USER->get('id');
         }
-
         $user = new User();
         $user->find_by_id($userid);
 
@@ -310,6 +316,7 @@ class View {
 
 		//Start-Anusha
 		// Outcome mapping
+		 $view->set('submittedoutcome',$template->get('submittedoutcome')); //added in nov
         $view->set('submittedcourseoutcome',$template->get('submittedcourseoutcome'));
 		$view->set('group',$template->get('group'));		
 		$view->set('copied',1);
@@ -613,6 +620,7 @@ class View {
         delete_records('usr_watchlist_view','view',$this->id);
 		//Start-Anusha
 		delete_records('outcome_results','view_id',$this->id);
+		delete_records('courseoutcome_results','view_id',$this->id);
 		//End-Anusha
         if ($blockinstanceids = get_column('block_instance', 'id', 'view', $this->id)) {
             require_once(get_config('docroot') . 'blocktype/lib.php');
@@ -882,7 +890,8 @@ class View {
         $smarty = smarty_core();
         $smarty->assign('categories', $categories);
         $smarty->assign('viewid', $this->get('id'));
-		$smarty->assign('outcome', $this->get('submittedoutcome')); // Added by Shashank
+		$smarty->assign('outcome', $this->get('submittedoutcome'));  // Added by Shashank
+        $smarty->assign('courseoutcome', $this->get('submittedcourseoutcome'));		
         $smarty->assign('new', $new);
         return $smarty->fetch('view/blocktypecategorylist.tpl');
     }
@@ -2081,7 +2090,7 @@ class View {
                 WHERE v.group = ' . $groupid . '
                 ORDER BY v.title, v.id', '', $offset, $limit);
 			*/
-            $viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type, v.submittedoutcome, v.group
+            $viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type, v.submittedoutcome,  v.group
                 FROM {view} v
                 WHERE v.group = ' . $groupid . '
                 ORDER BY v.title, v.id', '', $offset, $limit);
@@ -2096,7 +2105,7 @@ class View {
                 WHERE v.institution = ?
                 ORDER BY v.title, v.id', array($institution), $offset, $limit);
 			*/
-            $viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type, v.submittedoutcome, v.group
+            $viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type, v.submittedoutcome,  v.group
                 FROM {view} v
                 WHERE v.institution = ?
                 ORDER BY v.title, v.id', array($institution), $offset, $limit);
@@ -2114,7 +2123,7 @@ class View {
                 AND v.type != \'profile\'
                 ORDER BY v.title, v.id', '', $offset, $limit);
 			*/
-            $viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type, v.submittedoutcome, v.group,
+            $viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type, v.submittedoutcome,  v.group,
                     g.id AS submitgroupid, g.name AS submitgroupname, h.wwwroot AS submithostwwwroot, h.name AS submithostname
                 FROM {view} v
                 LEFT OUTER JOIN {group} g ON (v.submittedgroup = g.id AND g.deleted = 0)
@@ -2162,7 +2171,10 @@ class View {
 				$data[$i]['submittedoutcome'] = $viewdata[$i]->submittedoutcome;
 				$data[$i]['group'] = $viewdata[$i]->group;
 				//End-Anusha
+				//Start-Eshwari
 				
+				//$data[$i]['group'] = $viewdata[$i]->group;
+				//end-eshwari
                 $data[$i]['owner'] = $owner;
                 $data[$i]['removable'] = self::can_remove_viewtype($viewdata[$i]->type);
                 $data[$i]['description'] = $viewdata[$i]->description;
@@ -2235,6 +2247,181 @@ class View {
         );
     }
 
+	 //start-Eshwari 
+	    public static function get_mycourseviews_data($limit=5, $offset=0, $groupid=null, $institution=null) {
+
+        global $USER;
+        $userid = $USER->get('id');
+        $owner = null;
+
+        if ($groupid) {
+            $count = count_records('view', 'group', $groupid);
+			
+			//Start-Anusha
+			/*$viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type
+                FROM {view} v
+                WHERE v.group = ' . $groupid . '
+                ORDER BY v.title, v.id', '', $offset, $limit);
+			*/
+            $viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type, submittedcourseoutcome, v.group
+                FROM {view} v
+                WHERE v.group = ' . $groupid . '
+                ORDER BY v.title, v.id', '', $offset, $limit);
+			//End-Anusha
+        }
+        else if ($institution) {
+            $count = count_records('view', 'institution', $institution);
+			
+			//Start-Anusha
+            /*$viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type
+                FROM {view} v
+                WHERE v.institution = ?
+                ORDER BY v.title, v.id', array($institution), $offset, $limit);
+			*/
+            $viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type, v.submittedcourseoutcome, v.group
+                FROM {view} v
+                WHERE v.institution = ?
+                ORDER BY v.title, v.id', array($institution), $offset, $limit);
+			//End-Anusha
+        }
+        else {
+            $count = count_records_select('view', 'owner = ? AND type != ?', array($userid, 'profile'));
+			//Start-Anusha
+            /*$viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type,
+                    g.id AS submitgroupid, g.name AS submitgroupname, h.wwwroot AS submithostwwwroot, h.name AS submithostname
+                FROM {view} v
+                LEFT OUTER JOIN {group} g ON (v.submittedgroup = g.id AND g.deleted = 0)
+                LEFT OUTER JOIN {host} h ON (v.submittedhost = h.wwwroot)
+                WHERE v.owner = ' . $userid . '
+                AND v.type != \'profile\'
+                ORDER BY v.title, v.id', '', $offset, $limit);
+			*/
+            $viewdata = get_records_sql_array('SELECT v.id,v.title,v.startdate,v.stopdate,v.description, v.template, v.type,  v.submittedcourseoutcome,  v.group,
+                    g.id AS submitgroupid, g.name AS submitgroupname, h.wwwroot AS submithostwwwroot, h.name AS submithostname
+                FROM {view} v
+                LEFT OUTER JOIN {group} g ON (v.submittedgroup = g.id AND g.deleted = 0)
+                LEFT OUTER JOIN {host} h ON (v.submittedhost = h.wwwroot)
+                WHERE v.owner = ' . $userid . '
+                AND v.type != \'profile\'
+                ORDER BY v.title, v.id', '', $offset, $limit);
+			//End-Anusha
+            $owner = $userid;
+        }
+
+        if ($viewdata) {
+            $viewidlist = implode(', ', array_map(create_function('$a', 'return $a->id;'), $viewdata));
+            $artefacts = get_records_sql_array('SELECT va.view, va.artefact, a.title, a.artefacttype, t.plugin
+                FROM {view_artefact} va
+                INNER JOIN {artefact} a ON va.artefact = a.id
+                INNER JOIN {artefact_installed_type} t ON a.artefacttype = t.name
+                WHERE va.view IN (' . $viewidlist . ')
+                GROUP BY va.view, va.artefact, a.title, a.artefacttype, t.plugin
+                ORDER BY a.title, va.artefact', '');
+            $accessgroups = get_records_sql_array('SELECT view, accesstype, grouptype, role, id, name, startdate, stopdate
+                FROM (
+                    SELECT view, \'group\' AS accesstype, g.grouptype, vg.role, g.id, g.name, startdate, stopdate
+                    FROM {view_access_group} vg
+                    INNER JOIN {group} g ON g.id = vg.group AND g.deleted = 0
+                    UNION SELECT view, \'user\' AS accesstype, NULL AS grouptype, NULL AS role, usr AS id, \'\' AS name, startdate, stopdate
+                    FROM {view_access_usr} vu
+                    UNION SELECT view, accesstype, NULL AS grouptype, NULL AS role, 0 AS id, \'\' AS name, startdate, stopdate
+                    FROM {view_access} va
+                ) AS a
+                WHERE view in (' . $viewidlist . ')
+                ORDER BY view, accesstype, grouptype, role, name, id
+            ', array());
+            $tags = get_records_select_array('view_tag', 'view IN (' . $viewidlist . ')');
+        }
+    
+        $data = array();
+        if ($viewdata) {
+            for ($i = 0; $i < count($viewdata); $i++) {
+                $index[$viewdata[$i]->id] = $i;
+                $data[$i]['id'] = $viewdata[$i]->id;
+                $data[$i]['title'] = $viewdata[$i]->title;
+				
+				
+				
+				$data[$i]['submittedcourseoutcome'] = $viewdata[$i]->submittedcourseoutcome;
+				$data[$i]['group'] = $viewdata[$i]->group;
+				
+				//Start-Eshwari
+				
+				//$data[$i]['group'] = $viewdata[$i]->group;
+				//end-eshwari
+                $data[$i]['owner'] = $owner;
+                $data[$i]['removable'] = self::can_remove_viewtype($viewdata[$i]->type);
+                $data[$i]['description'] = $viewdata[$i]->description;
+                if (!empty($viewdata[$i]->submitgroupid)) {
+                    $data[$i]['submittedto'] = get_string('viewsubmittedtogroup', 'view',
+                                                          get_config('wwwroot') . 'group/view.php?id=' . $viewdata[$i]->submitgroupid,
+                                                          $viewdata[$i]->submitgroupname);
+                }
+                else if (!empty($viewdata[$i]->submithostwwwroot)) {
+                    $data[$i]['submittedto'] = get_string('viewsubmittedtogroup', 'view', $viewdata[$i]->submithostwwwroot, $viewdata[$i]->submithostname);
+                }
+                $data[$i]['artefacts'] = array();
+                $data[$i]['accessgroups'] = array();
+                if ($viewdata[$i]->startdate && $viewdata[$i]->stopdate) {
+                    $data[$i]['access'] = get_string('accessbetweendates2', 'view', format_date(strtotime($viewdata[$i]->startdate), 'strftimedate'),
+                        format_date(strtotime($viewdata[$i]->stopdate), 'strftimedate'));
+                }
+                else if ($viewdata[$i]->startdate) {
+                    $data[$i]['access'] = get_string('accessfromdate2', 'view', format_date(strtotime($viewdata[$i]->startdate), 'strftimedate'));
+                }
+                else if ($viewdata[$i]->stopdate) {
+                    $data[$i]['access'] = get_string('accessuntildate2', 'view', format_date(strtotime($viewdata[$i]->stopdate), 'strftimedate'));
+                }
+                $data[$i]['template'] = $viewdata[$i]->template;
+            }
+
+            // Go through all the artefact records and put them in with the
+            // views they belong to.
+            if ($artefacts) {
+                foreach ($artefacts as $artefactrec) {
+                    safe_require('artefact', $artefactrec->plugin);
+                    // Perhaps I shouldn't have to construct the entire
+                    // artefact object to render the name properly.
+                    $classname = generate_artefact_class_name($artefactrec->artefacttype);
+                    $artefactobj = new $classname(0, array('title' => $artefactrec->title));
+                    $artefactobj->set('dirty', false);
+                    if (!$artefactobj->in_view_list()) {
+                      continue;
+                    }
+                    $artname = $artefactobj->display_title(30);
+                    if (strlen($artname)) {
+                      $data[$index[$artefactrec->view]]['artefacts'][] = array('id'    => $artefactrec->artefact,
+                                                                               'title' => $artname);
+                    }
+                }
+            }
+            if ($accessgroups) {
+                foreach ($accessgroups as $access) {
+                  $data[$index[$access->view]]['accessgroups'][] = array(
+                      'accesstype' => $access->accesstype, // friends, group, loggedin, public, tutorsgroup, user
+                      'role' => $access->role,
+                      'roledisplay' => $access->role ? get_string($access->role, 'grouptype.' . $access->grouptype) : null,
+                      'id' => $access->id,
+                      'name' => $access->name,
+                      'startdate' => $access->startdate,
+                      'stopdate' => $access->stopdate
+                      );
+                }
+            }
+            if ($tags) {
+                foreach ($tags as $tag) {
+                    $data[$index[$tag->view]]['tags'][] = $tag->tag;
+                }
+            }
+        }
+
+        return (object) array(
+            'data'  => $data,
+            'count' => $count,
+        );
+    }
+	 
+	 //end-Eshwari
 
     /**
      * Returns an SQL snippet that can be used in a where clause to get views 
@@ -2416,7 +2603,7 @@ class View {
         $viewdata = get_records_sql_array('
             SELECT * FROM (
                 SELECT
-                    v.id, v.title, v.description, v.owner, v.ownerformat, v.group, v.institution, v.template, v.mtime, v.submittedoutcome
+                    v.id, v.title, v.description, v.owner, v.ownerformat, v.group, v.institution, v.template, v.mtime, v.submittedoutcome 
                 ' . $from . $where . '
                 GROUP BY v.id, v.title, v.description, v.owner, v.ownerformat, v.group, v.institution, v.template, v.mtime, v.submittedoutcome
             ) a
@@ -2442,7 +2629,7 @@ class View {
     }
 	
 	//Start-Eshwari
-	 public static function viewcourse_search($query=null, $ownerquery=null, $ownedby=null, $copyableby=null, $limit=null, $offset=0, $extra=true, $sort=null) {
+	 public static function view_coursesearch($query=null, $ownerquery=null, $ownedby=null, $copyableby=null, $limit=null, $offset=0, $extra=true, $sort=null) {
         global $USER;
         $admin = $USER->get('admin');
         $loggedin = $USER->is_logged_in();
@@ -3413,6 +3600,30 @@ public static function get_templatesearch_data_course(&$search) {
 								);			
 						}
 					}
+					//start-Eshwari 
+					if($viewrec->submittedcourseoutcome){
+						$userrole = get_records_sql_array('
+										SELECT
+											gm.role
+										FROM {group_member} gm
+										INNER JOIN {group} g ON (gm.group = g.id and g.deleted = 0)
+										WHERE gm.member = ?',
+										//AND g.courseoutcome = ?',
+									array($userid,$viewrec->submittedcourseoutcome)
+								);
+						if($userrole->role == "member") {
+							$authrec = get_records_sql_array('
+										SELECT
+											g.id, g.name, gm.role
+										FROM {group_member} gm
+										INNER JOIN {group} g ON (g.id = gm.group and g.deleted = 0)
+										WHERE gm.member = ?',
+										//AND g.outcome = ?',
+									array($f->author,$viewrec->submittedcourseoutcome)
+								);			
+						}
+					}
+					//end-Eshwari
 					if($authrec){
 						$f->dispauth = 0;
 						$f->grpname = $authrec->name;
@@ -3772,6 +3983,18 @@ function objection_form_cancel_submit(Pieform $form) {
         'goto' => '/view/view.php?id=' . $view->get('id'),
     ));
 }
+/*
+//function to get courseoutcomes from groups
+function get_courseoutcomes($_id){
+
+$outrec1 = get_record('courseoutcomes','id',$_id);
+if(!$outrec1 || $outrec1->deleted == 1){
+	$notfound = array();
+	return $notfound;
+}else{
+	return $outrec2;
+	}
+  }*/
 
 
 /**

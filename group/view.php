@@ -30,6 +30,7 @@ define('PUBLIC', 1);
 define('MENUITEM', 'groups/info');
 require(dirname(dirname(__FILE__)) . '/init.php');
 require_once('group.php');
+require_once('courseoutcome.php');
 require_once('searchlib.php');
 require_once(get_config('docroot') . 'interaction/lib.php');
 require_once(get_config('libroot') . 'view.php');
@@ -50,7 +51,7 @@ $group->admins = get_column_sql("SELECT member
     AND role = 'admin'", array($group->id));
 
 $role = group_user_access($group->id);
-
+printf($role);
 if (is_logged_in()) {
     $afterjoin = param_variable('next', 'view');
     if ($role) {
@@ -112,11 +113,36 @@ $smarty->assign('viewcount', count_records('view', 'group', $group->id));
 $smarty->assign('filecount', $filecounts->files);
 $smarty->assign('foldercount', $filecounts->folders);
 $subgroup = 0;
+
+//start-Eshwari
+$groupid = param_integer('group',0);
+printf($groupid);
+$grouprec = get_record('group', 'id',$groupid);
+
+//end-Eshwari
 if ($role) {
     // For group members, display a list of views that others have
     // shared to the group
+	/*
+	if ($grouprec->courseoutcome){
     $viewdata = View::get_sharedviews_data(null, 0, $group->id);
     $smarty->assign('sharedviews', $viewdata->data);
+	}
+	if($grouprec->courseoffering){
+	printf('here');
+	$viewdata2 = View::get_sharedcourseviews_data(null, 0, $group->id);
+    $smarty->assign('sharedviews2', $viewdata2->data);
+	}
+	*/
+	if($group->outcome){
+	$viewdata = View::get_sharedviews_data(null, 0, $group->id);
+    $smarty->assign('sharedviews', $viewdata->data);
+	}
+	if($group->courseoffering){
+	$viewdata2 = View::get_sharedcourseviews_data(null, 0, $group->id);
+    $smarty->assign('sharedviews2', $viewdata2->data);
+	}
+	
     if (group_user_can_assess_submitted_views($group->id, $USER->get('id'))) {
         // Display a list of views submitted to the group
 
@@ -133,14 +159,88 @@ if ($role) {
 		}else{
         		$smarty->assign('submittedviews', View::get_submitted_views($group->id));				
 		}
-	}else{
+	}
+	/*else{
         $smarty->assign('submittedviews', View::get_submitted_views($group->id));		
 	}
+	*/
+	
+	//start courseoffering -outcomes
+	
+	if ($group->courseoffering){
+	$courseofferingdes= get_record('course_offering', 'id', $group->courseoffering);
+		if($courseofferingdes->coursetmp_id){
+		$coursetempdes =get_record('course_template', 'id',$courseofferingdes->coursetmp_id);
+		printf($coursetempdes->id);
+		$sampledes =get_courseoutcomes($coursetempdes->id);
+		
+		  $outcomelists= @get_records_sql_array('SELECT  c.id FROM {courseoutcomes} c INNER JOIN {course_template} ct 
+				  ON c.coursetemplate_id = ct.id
+				WHERE c.coursetemplate_id =? ', array($coursetempdes->id)
+				);
+	  $course_lists = array();
+	  $i=0;
+	  foreach($outcomelists as $crstest){
+		
+		$course_lists[$i]=$crstest->id;
+		$i++;
+	} 
+	$max =count($course_lists);
+	printf($max);
+
+	for($i= 0; $i < $max; $i++){
+	
+
+	printf($course_lists[$i]);
+	
+	
+	//if($course_lists[$i]){
+	$courseoutcomedes = get_record('courseoutcomes','id',$course_lists[$i]);
+		if($courseoutcomedes->main_courseoutcome){
+			$main_group = get_record('group','courseoffering',$courseoutcomedes->main_courseoutcome);
+			
+			if($main_group){
+			  // Display a list of views submitted to the group
+        		  $smarty->assign('submittedviews2', View::get_submitted_views_for_courseoutcome($main_group->id, $course_lists[i]));				  
+			  $subgroup = 1;
+			}
+		}else{
+		
+		 $smarty->assign('submittedviews2', View::get_submitted_courseviews($group->id));
+		}
+		
+		/*
+		else {
+	     $smarty->assign('submittedviews2', View::get_submitted_courseviews($group->id));	
+	    }
+		*/
+		
+			printf('---');
+	}
+	//for loop
+	} //course template 
+		
+		
+	}
+	// courseoffering 
+	
+	//end
+	
     }
-}
+} //role
+
+
 if (group_user_can_assess_submitted_views($group->id, $USER->get('id')))
 {
+if($group->outcome){
 	$smarty->assign('formativeviews', View::get_formative_views($group->id, $USER->get('id')));
+	//start-esha
+	}
+	if($group->courseoffering){
+	$smarty->assign('formativeviews2', View::get_formative_courseviews($group->id, $USER->get('id')));
+	//end
+	}
+	
 }
 
 //$smarty->assign('finalviews', View::get_final_views_for_outcome($main_group->id, $group->outcome));
@@ -171,7 +271,9 @@ $chairmems = @get_records_sql_array(
 	    AND gm.role = ?',
 	array($group->id, 'chair')
 );
-	
+
+if($group->outcome){	
+//outcome
 //$summativeViews = View::get_submitted_views_for_outcome($group->id, $group->outcome);
 $outrec = get_record('outcomes','id',$group->outcome);
 	  if($outrec->special_access){
@@ -246,6 +348,121 @@ foreach($viewdata as $view)
 			$smarty->assign('status',1);
 		}		
 }
+
+}//
+ //printf($group->courseoffering);
+//added by esha
+//if ($role) {
+
+//if (group_user_can_assess_submitted_views($group->id, $USER->get('id'))) {
+
+//start courseoffering
+
+
+if($group->courseoffering){
+
+$courseofferingdes= get_record('course_offering', 'id', $group->courseoffering); 
+$coursetempdes =get_record('course_template', 'id',$courseofferingdes->coursetmp_id);
+//$sampledes =get_courseoutcomes($coursetempdes->id);
+$outcomelists= @get_records_sql_array('SELECT  c.id FROM {courseoutcomes} c INNER JOIN {course_template} ct 
+				  ON c.coursetemplate_id = ct.id
+				WHERE c.coursetemplate_id =? ', array($coursetempdes->id)
+				);
+	  $course_lists = array();
+	  $i=0;
+	  foreach($outcomelists as $crstest){
+		
+		$course_lists[$i]=$crstest->id;
+		$i++;
+	}
+	
+	
+	$max =count($course_lists);
+	for ($i= 0; $i < $max; $i++){
+	printf($course_lists[$i]);
+	// printf('in for loop');
+	$courseoutrec = get_record('courseoutcomes','id',$course_lists[$i]);
+	  if($courseoutrec->special_access){
+		$viewdata2 = get_records_sql_array('
+            SELECT v.id, v.title, v.description, v.owner, v.ownerformat, v.group, v.institution, v.assessCount
+            FROM {view} v
+		INNER JOIN {usr} u ON (u.id = v.owner)
+            WHERE submittedgroup = ?
+		AND u.primary_focus = ?
+            ORDER BY title, id',
+            array($group->id, $courseoutrec->special_access)
+        	);
+	  }else{
+	 
+        	$viewdata2 = get_records_sql_array('
+            SELECT id, title, description, owner, ownerformat, "group", institution, assessCount
+            FROM {view}
+            WHERE submittedgroup = ?
+            ORDER BY title, id',
+            array($group->id)
+        	);
+	  }
+	
+	
+foreach($viewdata2 as $view2)
+{		
+	$assessment2 = @get_records_sql_array(
+		'SELECT *
+		   FROM {courseoutcome_results} 
+		   WHERE courseoutcome = ?
+		   AND view_id = ?
+		   AND rubric_no = 0
+		   AND (submitted = 1 OR submitted = 2)',
+		array($course_lists[$i], $view->id)
+		);
+	
+	$view_subcourseoutcomes = get_records_sql_array("SELECT id from courseoutcomes where main_courseoutcome=?", array($course_lists[$i]));
+		
+	$assessedviews2 = @get_records_sql_array(
+		'SELECT *
+		   FROM {courseoutcome_results} 		   
+		   WHERE view_id = ?
+		   AND rubric_no = 0
+		   AND (submitted = 1 OR submitted = 2)',
+		array($view->id)
+		);	
+		
+		$chairs=0;
+		$coms=0;
+		if($chairmems)
+		{
+			$chairs=count($chairmems);
+		}
+		if($commmems)
+		{
+			$coms=count($commmems);		
+		}
+		if($assessment2 && count($assessment2) == $chairs+$coms)		{			
+			
+			if(count($assessedviews2)== (count($assessment2)*(count($view_subcourseoutcomes)+1)))
+			{
+				update_record('view', array('assessCount' => 2), array('id' => $view->id));
+				$smarty->assign('status',2);
+			}
+			else
+			{
+				update_record('view', array('assessCount' => 1), array('id' => $view->id));
+				$smarty->assign('status',1);
+			}
+		}		
+		else
+		{
+			update_record('view', array('assessCount' => 1), array('id' => $view->id));
+			$smarty->assign('status',1);
+		}		
+}
+	}	//for loop    
+//end 
+
+}
+
+//----
+
 //End of view status logic
 //$smarty->assign('finalviews2', View::get_submitted_views_for_outcome($main_group->id, $group->outcome));
 $groupinfo = get_record_sql(
@@ -263,11 +480,19 @@ if($groupinfo->role=="chair")
 	    FROM {view}
 	    WHERE assessCount = 2'	
 );*/
+if($group->outcome){
 $smarty->assign('finalviews', View::get_final_views_for_outcome($group->id,$group->outcome));
 }
+if($group->courseoffering){
+$smarty->assign('finalviews2', View::get_final_views_for_courseoutcome($group->id,$course_lists[$i]));
+}
+}
+
+
 
 $smarty->assign('subgroup',$subgroup);
 $smarty->assign('role', $role);
+//$smarty->assign('GROUP',group_get_menu_tabs($group->id) )
 $smarty->display('group/view.tpl');
 
 ?>
