@@ -30,17 +30,12 @@ require(dirname(dirname(__FILE__)) . '/init.php');
 require_once('pieforms/pieform.php');
 require_once('courseoffering.php');
 
-
 $courseoffering_id = param_integer('courseoffering',0);
 $offset = param_integer('offset',0);
 
-
-
 if (!can_create_courseofferings()) {
-	
-    throw new AccessDeniedException(get_string('accessdenied', 'error'));
+	    throw new AccessDeniedException(get_string('accessdenied', 'error'));
 }
-
 
 $courseofferingdes = is_courseoffering_available($courseoffering_id);
 
@@ -55,28 +50,23 @@ if($courseoffering_id == 0){
 	define('MENUITEM', 'courseofferings/subcourseofferings');
 	define('TITLE', $courseofferingdes->courseoffering_name);
 }
-//start-Eshwari
-$course_id = param_integer('coursetemplate',0);
-printf($course_id);
-$coursetemplatedes = get_coursetemplate_name($course_id);
-//end-eshwari
 
-printf($course_id);
+$tmpl_id = param_integer('coursetemplate',0);
 
-
-//college offering type
-$collegeofferingtype =array();
-$collegeofferingtype ['Collegeofferingtype'] = 'Select a Collage';
-$collegeofferingtype['Business, W. P. Carey School of Business'] ='Business, W. P. Carey School of Business';
-$collegeofferingtype['Colleg of Technology and Innovation']= 'Colleg of Technology and Innovation'; 
-$collegeofferingtype['Mary Lou Fulton'] = 'Mary Lou Fulton';
-$collegeofferingtype['School of Letter and Science']='School of Letter and Science';
-//department offering type
-$deptofferingtype = array();
-$deptofferingtype['Deptofferingtype'] = 'Select a Department';
-$deptofferingtype['Engineering and computing'] ='Engineering and computing';
-$deptofferingtype['Applied Science'] ='Applied Science';
-$deptofferingtype['Industry Management']= 'Industry Management';
+$coursetemplatedes = get_coursetemplate_name($tmpl_id);
+$sampledes =get_courseoutcomes($tmpl_id);
+$outcomelists= @get_records_sql_array('SELECT  c.id FROM {courseoutcomes} c INNER JOIN {course_template} ct 
+              ON c.coursetemplate_id = ct.id
+            WHERE c.coursetemplate_id =? ', array($tmpl_id)
+			);
+  $course_lists = array();
+  $i=0;
+foreach($outcomelists as $crstest){
+	
+	$course_lists[$i]=$crstest->id;
+	$i++;
+} 
+//printf($course_lists[3]);
 // semester offering
 $semestertype = array();
 $semestertype['semestertype']= 'Select a Semester';
@@ -84,27 +74,26 @@ $semestertype['Spring-2014'] ='Spring-2014';
 $semestertype['Fall-2014'] = 'Fall-2014';
 $semestertype['Spring-2015'] ='Spring-2015';
 $semestertype['Fall-2015'] ='Spring-2015';
-
+$courselevel=array();
+$courselevel['courselevel']= 'Select a level';
+$courselevel['Undergraduate'] ='Undergraduate';
+$courselevel['Graduate'] ='Graduate';
 //pre-requisite
 $prerequisitetype= array();
 //$prerequisitetype['prerequisitetype'] ='Select one';
 $prerequisitetype['Prereq'] ='Prereqs';
 $prerequisitetype['NoPrereq'] = 'NoPrereq';
-printf($course_id);
+//printf($course_id);
 $coursetmps = @get_records_sql_array(
 	'SELECT id, coursetemplate_name
-		FROM {course_template}
-		WHERE id = course_id',
+		FROM {course_template}',
 	array()
 );
-/*
 $coursetemplates = array();
-//$coursetemplates['CourseTemplate'] = 'Select a Course Template';
-foreach($coursetmps as $coursetmp){
-	$coursetemplates[$coursetmp->id] = $coursetmp->coursetemplate_name;
+foreach($coursetmps as $coursetemplate){
+	$coursetemplates[$coursetemplate->id] = $coursetemplate->coursetemplate_name;
 }
-*/
- 
+
 $createcourseoffering = array(
     'name'     => 'createcourseoffering',
     'method'   => 'post',
@@ -119,7 +108,7 @@ $createcourseoffering = array(
             'type'         => 'text',
             'title'        => 'Instructor 1',
         );
-		$createcourseoffering['elements']['Instructor1'] = array(
+		$createcourseoffering['elements']['Instructor2'] = array(
             'type'         => 'text',
             'title'        => 'Instructor 2',
         );
@@ -129,46 +118,56 @@ $createcourseoffering = array(
 			'options'      =>  $semestertype,
 			'defaultyvalue'=>  'Select a Semester',
         );
-		/* $createcourseoffering['elements']['coursetemplate'] = array(
+		$createcourseoffering['elements']['courselevel'] = array(
             'type'         => 'select',
-            'title'        => 'Course Template',
-            'options'      => $coursetemplates,
-			'defaultvalue' => $coursetemplatedes->coursetemplate_name,
+            'title'        => 'Course Level',
+			'options'      =>  $courselevel,
+			'defaultyvalue'=>  'Select a Level',
         );
-		*/
-		$createcourseoffering['elements']['coursetemplate'] = array(
-            'type'         => 'text',
-           'title'        => 'Course Template',
-		   'options'      => $coursetemplates,
-		   'defaultvalue' => $coursetemplatedes->coursetemplate_name,
-        );
-		 
-		
-
+			 
 if($courseoffering_id == 0){
 	$disable = 0;
-	$default = '';
+	//$default = '';
 }else{
 	$disable = 1;
 	$default = $courseofferingdes->coursetmp_id;
 }
-
-
-      
-/*
-$createcourseoffering['elements']['prerequisitetype'] = array(
-            'type'         => 'select',
-            'title'        => 'Indicate Pre-requisites exist for the Course',
-            'options'      => $prerequisitetype,
-           // 'defaultvalue' => 'prerequisitetype',
-		   'defaultvalue' => 'Prereq',
-        );*/
-
-      
+$createcourseoffering['elements']['coursetemplate'] = array(
+            'type'         => 'text',
+            'title'        => 'Course Template ID',
+ 		    'options'      => $coursetemplates,
+			
+		    'defaultvalue' => $coursetemplatedes->id,
+		  );
+		  $createcourseoffering['elements']['coursetemplatename'] = array(
+            'type'         => 'text',
+            'title'        => 'Course Template Name',
+ 		    'options'      => $coursetemplates,
+		    'defaultvalue' => $coursetemplatedes->coursetemplate_name,
+		  );
+ 
 	  $createcourseoffering['elements']['courseofferingid'] = array(
 		'type' => 'hidden',
 		'value' => $courseoffering_id,
 	  );
+	  
+	  $createcourseoffering['elements']['courseoutcome1'] = array(
+		'type' => 'hidden',
+		'value' => $course_lists[0],
+	  );
+	  $createcourseoffering['elements']['courseoutcome2'] = array(
+		'type' => 'hidden',
+		'value' => $course_lists[1],
+	  );
+	  $createcourseoffering['elements']['courseoutcome3'] = array(
+		'type' => 'hidden',
+		'value' => $course_lists[2],
+	  );
+	  $createcourseoffering['elements']['courseoutcome4'] = array(
+		'type' => 'hidden',
+		'value' => $course_lists[3],
+	  );
+	  
         $createcourseoffering['elements']['submit']   = array(
             'type'  => 'submitcancel',
             'value' => array('Save', 'Cancel'),
@@ -187,7 +186,6 @@ $smarty->assign('header', 'Create Sub Course Template');
 $smarty->assign('COURSEOFFERINGNAV','');
 $smarty->assign('PAGEHEADING', 'Create Course Offering');
 }
-
 $smarty->display('courseoffering/create.tpl');
 
 function createcourseoffering_validate(Pieform $form, $values) {
@@ -198,7 +196,8 @@ global $courseoffering_id;
    }
 
     if (get_field('course_offering', 'id', 'coursetmp_id', $values['coursetemplate'],'courseoffering_name', $values['name'])) {
-		$errorval = 'Course Template already exists for this course';
+    //if (get_field('course_offering', 'id','courseoffering_name', $values['name'])) {
+	$errorval = 'Course Template already exists for this course';
     }
 
 	if($errorval){
@@ -210,7 +209,6 @@ global $courseoffering_id;
   	}
 	}
 }
-
 function createcourseoffering_cancel_submit(Pieform $form, $values) {
 global $offset;
     redirect(get_config('wwwroot').'/courseoffering/courseofferings.php?courseoffering=' . $_POST['courseofferingid'] . '&offset=' . $offset);
@@ -222,29 +220,30 @@ function createcourseoffering_submit(Pieform $form, $values) {
 global $offset,$courseoffering_id, $courseofferingdes;
 if($courseoffering_id == 0){
 	$coursetemplate = $_POST['coursetemplate'];
+	$coursetemplatename = $_POST['coursetemplatename'];
 }else{
 	$coursetemplate = $courseofferingdes->coursetmp_id;
+	$coursetemplatename = $courseofferingdes->coursetmp_name;
 }
-
-//$str= $_POST['description'];
+$str= $_POST['description'];
 
 /*$desclen = strlen($desc);
 $str = substr($desc,3,$desclen-7);*/
-
+printf('before table entries');
 db_begin();
-$newcourseoffering = insert_record('course_offering', (object)array('courseoffering_name' => $_POST['name'],'Instrcutor1' =>$_POST[Instrcutor1],'Instrcutor2' =>$_POST[Instrcutor2],'coursetmp_id' => $coursetemplate,'semester' =>$_POST['semestertype'], 'main_courseoffering' => $_POST['courseofferingid'], 'deleted' => 0),'id',true);
+$newcourseoffering = insert_record('course_offering', (object)array('courseoffering_name' => $_POST['name'],'Instructor1' =>$_POST[Instructor1],'Instructor2' =>$_POST[Instructor2],'coursetmp_id' => $coursetemplate,'coursetmp_name' => $coursetemplatename,'semester' =>$_POST['semestertype'],'courselevel' =>$_POST['courselevel'],'courseoutcome1' =>$_POST['courseoutcome1'],'courseoutcome2' =>$_POST['courseoutcome2'],'courseoutcome3' =>$_POST['courseoutcome3'],'courseoutcome4' =>$_POST['courseoutcome4'], 'main_courseoffering' => $_POST['courseofferingid'], 'deleted' => 0),'id',true);
 db_commit();
-
-
     $SESSION->add_ok_msg('Course Offering Saved');
-	print("Lets start debugging");
-
+	//redirect(get_config('wwwroot').'courseoffering/edit.php?courseoffering=' . $newcourseoffering. '&main_offset=' . $offset);
+	 redirect(get_config('wwwroot').'/courseoffering/courseofferings.php?courseoffering=' . $_POST['courseofferingid']. '&offset=' . $offset);
+/*
    if($_POST['prerequisitetype'] == 'Prereq'){
     redirect(get_config('wwwroot').'courseoffering/edit.php?courseoffering=' . $newcourseoffering. '&main_offset=' . $offset);
 	}else{
     redirect(get_config('wwwroot').'/courseoffering/courseofferings.php?courseoffering=' . $_POST['courseofferingid']. '&offset=' . $offset);
    }
+   */
+   
 
 }
-
 ?>

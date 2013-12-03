@@ -40,27 +40,48 @@ $main_offset = param_integer('main_offset',0);
 if (!can_create_courseofferings()) {
     throw new AccessDeniedException(get_string('accessdenied', 'error'));
 }
-
 $courseofferingdes = is_courseoffering_available($courseoffering_id);
 
 if (!$courseofferingdes) {
     throw new AccessDeniedException("courseoffering does not exist");
 }
-
 if ($courseofferingdes->main_courseoffering != 0){
 $main_courseoffering = is_courseoffering_available($courseofferingdes->main_courseoffering);
-
 if (!$main_courseoffering) {
     throw new AccessDeniedException("courseoffering does not exist");
 }
 	define('MENUITEM', 'courseofferings/subcourseofferings');
-
 }else{
 	define('MENUITEM', 'courseofferings/courseofferings');
 }
 
 define('TITLE', $courseofferingdes->courseoffering_name);
 
+$tmpl_id = param_integer('coursetemplate',0);
+
+$coursetemplatedes = get_coursetemplate_name($tmpl_id);
+$sampledes =get_courseoutcomes($tmpl_id);
+$outcomelists= @get_records_sql_array('SELECT  c.id FROM {courseoutcomes} c INNER JOIN {course_template} ct 
+              ON c.coursetemplate_id = ct.id
+            WHERE c.coursetemplate_id =? ', array($tmpl_id)
+			);
+  $course_lists = array();
+  $i=0;
+foreach($outcomelists as $crstest){
+	
+	$course_lists[$i]=$crstest->id;
+	$i++;
+}
+$coursetmps = @get_records_sql_array(
+	'SELECT id, coursetemplate_name
+		FROM {course_template}',
+	array()
+);
+
+$coursetemplates = array();
+foreach($coursetmps as $coursetemplate){
+	$coursetemplates[$coursetemplate->id] = $coursetemplate->coursetemplate_name;
+}
 // semester offering
 $semestertype = array();
 $semestertype['semestertype']= 'Select a Semester';
@@ -69,19 +90,10 @@ $semestertype['Fall-2014'] = 'Fall-2014';
 $semestertype['Spring-2015'] ='Spring-2015';
 $semestertype['Fall-2015'] ='Spring-2015';
 
-
-$degcourses = @get_records_sql_array(
-	'SELECT id, course_name
-		FROM {dept_courses}',
-	array()
-);
-
-$courses = array();
-$courses['Course'] = 'Select a Course';
-foreach($degcourses as $course){
-	$courses[$course->id] = $course->course_name;
-}
-
+$courselevel=array();
+$courselevel['courselevel']= 'Select a level';
+$courselevel['Undergraduate'] ='Undergraduate';
+$courselevel['Graduate'] ='Graduate';
 
 $createcourseoffering = array(
     'name'     => 'createcourseoffering',
@@ -109,10 +121,13 @@ $createcourseoffering = array(
 			'options'      =>  $semestertype,
 			'defaultvalue'=>  $courseofferingdes->semester,
         );
-		
-			
-		
-		
+		$createcourseoffering['elements']['courselevel'] = array(
+            'type'         => 'select',
+            'title'        => 'Course Level',
+			'options'      =>  $courselevel,
+			'defaultvalue'=>  $courseofferingdes->courselevel,
+        );
+			 
 if($courseofferingdes->main_courseoffering == 0){
 	$disable = 0;
 }else{
@@ -120,16 +135,37 @@ if($courseofferingdes->main_courseoffering == 0){
 }
        $createcourseoffering['elements']['coursetemplate'] = array(
             'type'         => 'text',
-            'title'        => 'Course Template',
- 		   // 'options'      => $coursetemplates,
-		    'defaultvalue' => $coursetemplatedes->coursetmp_id,
+            'title'        => 'Course Template ID',
+            'disabled' 	   => $disable,
+ 		    'defaultvalue' => $courseofferingdes->coursetmp_id,
 			);
-	
-		
-        
+			$createcourseoffering['elements']['coursetemplatename'] = array(
+            'type'         => 'text',
+            'title'        => 'Course Template Name',
+            'disabled' 	   => $disable,
+ 		    'defaultvalue' => $courseofferingdes->coursetmp_name,
+			);
+
+	       
 	  $createcourseoffering['elements']['courseofferingid'] = array(
 		'type' => 'hidden',
 		'value' => $courseoffering_id,
+	  );
+     $createcourseoffering['elements']['courseoutcome1'] = array(
+		'type' => 'hidden',
+		'value' => $courseofferingdes->courseoutcome1,
+	  );
+	  $createcourseoffering['elements']['courseoutcome2'] = array(
+		'type' => 'hidden',
+		'value' => $courseofferingdes->courseoutcome2,
+	  );
+	  $createcourseoffering['elements']['courseoutcome3'] = array(
+		'type' => 'hidden',
+		'value' => $courseofferingdes->courseoutcome3,
+	  );
+	  $createcourseoffering['elements']['courseoutcome4'] = array(
+		'type' => 'hidden',
+		'value' => $courseofferingdes->courseoutcome4,
 	  );
 	  $createcourseoffering['elements']['maincourseoffering'] = array(
 		'type' => 'hidden',
@@ -138,8 +174,7 @@ if($courseofferingdes->main_courseoffering == 0){
         $createcourseoffering['elements']['submit']   = array(
             'type'  => 'submitcancel',
             'value' => array('Save', 'Cancel'),
-        );
-
+       );
 $createcourseoffering = pieform($createcourseoffering);
 $smarty = smarty();
 $smarty->assign('createcourseoffering', $createcourseoffering);
@@ -169,12 +204,12 @@ global $courseoffering_id,$courseofferingdes;
 
 if($courseofferingdes->main_courseoffering){
 
-	$degree_id = $courseofferingdes->degree_id;
+	$coursetmp_id = $courseofferingdes->coursetmp_id;
 }else{
-	$degree_id = $_POST['degree'];
+	$coursetmp_id = $_POST['coursetemplate'];
 }
 
- 	$dupid = get_record('course_template', 'degree_id', $degree_id,'courseoffering_name', $_POST['name']);
+ 	$dupid = get_record('course_offering', 'coursetmp_id', $coursetmp_id,'courseoffering_name', $_POST['name']);
     if ($dupid != '' && $dupid->id != $courseoffering_id) {
 		$errorval = 'courseoffering already exists for this course';
     }
@@ -182,14 +217,14 @@ if($courseofferingdes->main_courseoffering){
 	if($errorval){
  	$form->set_error('name', $errorval);
 	}else if(!$courseofferingdes->main_courseoffering) {
-   	if($_POST['degree'] == "Course"){
+   	if($_POST['coursetemplate'] == "Course"){
 	$err = 'Please select a course';
-	$form->set_error('degree',$err);
+	$form->set_error('coursetemplate',$err);
   	}
 	/*
-	if($_POST['degree'] == "Course"){
+	if($_POST['coursetemplate'] == "Course"){
 	$err = 'Please select a course';
-	$form->set_error('degree',$err);
+	$form->set_error('coursetemplate',$err);
   	}
 */
     }
@@ -206,32 +241,27 @@ function createcourseoffering_submit(Pieform $form, $values) {
 global $courseofferingdes, $main_offset, $offset;
 db_begin();
 
-if($_POST['degree'] != $courseofferingdes->degree_id){
+if($_POST['coursetemplate'] != $courseofferingdes->coursetmp_id){
 	$primaryval = NULL;
 }else{
 	$primaryval = $courseofferingdes->special_access;
 }
 
 if($courseofferingdes->main_courseoffering){
-	$degree_id = $courseofferingdes->degree_id;
+	$coursetmp_id = $courseofferingdes->coursetmp_id;
 }else{
-	$degree_id = $_POST['degree'];
+	$coursetmp_id = $_POST['coursetemplate'];
 }
 $str= $_POST['description'];
 /*$desclen = strlen($desc);
 $str = substr($desc,3,$desclen-7);*/
-update_record('course_template', array('courseoffering_name' => $_POST['name'],'description' => $str, 'degree_id' => $degree_id,'college_offering' =>$_POST['collegeofferingtype'],'dept_offering' =>$_POST['deptofferingtype'], 'special_access' => $primaryval,'prerequisite_type' => $_POST['prerequisitetype']),array('id' => $_POST['courseofferingid']));
+update_record('course_offering', array('courseoffering_name' => $_POST['name'],'Instructor1' =>$_POST[Instructor1],'Instructor2' =>$_POST[Instructor2],'semester' =>$_POST['semestertype'],'courselevel' =>$_POST['courselevel']),array('id' => $_POST['courseofferingid']));
 db_commit();
 
-    $SESSION->add_ok_msg('Course Template Updated');
+    $SESSION->add_ok_msg('Course Offering Updated');
 
-    redirect(get_config('wwwroot').'courseoffering/edit.php?courseoffering=' . $_POST['courseofferingid'] . '&offset=' .$offset . '&main_offset=' .$main_offset);
-
-}
-
-
-
-
-
+   // redirect(get_config('wwwroot').'courseoffering/edit.php?courseoffering=' . $_POST['courseofferingid'] . '&offset=' .$offset . '&main_offset=' .$main_offset);
+    redirect(get_config('wwwroot').'courseoffering/courseofferings.php?coursetemplate=' . $_POST['maincourseoffering']. '&offset=' . $offset);
+	}
 
 ?>

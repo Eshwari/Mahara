@@ -150,25 +150,25 @@ global $USER;
             'weight' => 20
         ),
 	);
+if(!$USER->get('admin')){
+$activities = @get_records_sql_array(
+    'SELECT id
+       FROM {add_activities}
+       WHERE courseoffering_id = ?
+	 AND deleted = 0',
+    array($courseoffering_id)
+);
+
+} 
+	if($USER->get('admin') || $activities){ 
+    $menu['activities'] = array(
+            'path' => 'courseofferings/activities',
+            'url' => 'courseoffering/activities.php?courseoffering='.$courseoffering_id,
+			'title' => 'Add Activities',
+            'weight' => 30
+        );
+}
 	
-	if($USER->get('admin') || $courseofferings){ 
-    $menu['addstudents'] = array(
-            'path' => 'courseofferings/addstudents',
-            'url' => 'courseoffering/addstudents.php?courseoffering='.$courseoffering_id,
-			'title' => 'Add Students',
-            'weight' => 30
-        );
-}
-	if($USER->get('admin') || $courseofferings){ 
-    $menu['addfaculty'] = array(
-            'path' => 'courseofferings/addfaculty',
-            'url' => 'courseoffering/addfaculty.php?courseoffering='.$courseoffering_id,
-
-
-			'title' => 'Add Faculty',
-            'weight' => 30
-        );
-}
 
 
 	if (defined('MENUITEM')) {
@@ -224,8 +224,69 @@ global $USER;
 return $menu;
 }
 
+function get_activities($limit=20, $offset=0, $courseofferingid=0) {
 
+    if(!$courseofferingid){
+	$courseofferingid = 0;
+    }
+    
+    $values = array($courseofferingid);
+    $activities =  @get_records_sql_array(
+	'SELECT *
+		FROM {add_activities}
+		WHERE courseoffering_id = ?
+		AND deleted != 1
+		LIMIT ?,?',
+	array($courseofferingid,$offset,$limit)
+    );
+    
+ $count = count_records_sql('SELECT COUNT(*) FROM {add_activities} WHERE courseoffering_id = ? AND deleted != 1', $values);
 
+    if (!$courseoffering) {
+        $courseoffering = array();
+    }
+
+    return array('activities' => $activities, 'count' => $count);
+
+}
+function can_create_activities() {
+    global $USER;
+    if ($USER->get('admin') || $USER->is_institutional_admin()) {
+        return true;
+    }
+    return false;
+}
+
+function is_activity_available($activityid) {
+$activityrec = get_record('add_activities','id',$activityid);
+if(!$activityrec || $activityrec->deleted == 1){
+	$notfound = array();
+	return $notfound;
+}else{
+	return $activityrec;
+}
+
+}
+
+function activity_get_menu_tabs($courseoffering_id=0, $activity_id=0) {
+static $menu;
+global $USER;
+    $menu = array(
+        'info' => array(
+            'path' => 'courseofferings/activities/info',
+            'url' => 'courseoffering/viewactivity.php?courseoffering='.$courseoffering_id .'&activity=' . $activity_id,
+            'title' => 'About',
+            'weight' => 20
+        ),
+	);
+    if (defined('MENUITEM')) {
+        $key = substr(MENUITEM, strlen('courseofferings/activities/'));
+        if ($key && isset($menu[$key])) {
+            $menu[$key]['selected'] = true;
+        }
+    }
+return $menu;
+}
 
 
 ?>

@@ -94,8 +94,8 @@ $pagination = build_pagination(array(
 ));
 
 
-printf($course_id);
-$coursetemplatedes = get_coursetemplate_name($course_id);
+//printf($course_id);
+
 
 //start -eshwari
 
@@ -105,7 +105,7 @@ $coursetemplatedes = get_coursetemplate_name($course_id);
 
 	   
 //var samples =$samplesdes->id;
-printf((int)$samplesdes->id);
+//printf((int)$samplesdes->id);
 
 
 $smarty->assign('samplesdes',(int)$samplesdes->id);

@@ -1,0 +1,3 @@
+<h3><a href="{$WWWROOT}courseoffering/view.php?courseoffering={$courseoffering->id|escape}&offset={$offset}">{$courseoffering->courseoffering_name|escape}</a></h3>
+<h6> <a href="{$WWWROOT}courseoffering/addstudents.php?courseoffering={$courseoffering->id}&main_offset={$offset}" class="btn">Add students</a></h6>
+<h6> <a href="{$WWWROOT}courseoffering/rubrics.php?courseoffering={$courseoffering->id}" class="btn">Rubrics</a> &nbsp;&nbsp;&nbsp;&nbsp; <a href="{$WWWROOT}courseoffering/primary.php?courseoffering={$courseoffering->id}&main_offset={$offset}" class="btn">Set/Remove Primary focus area</a> <h6> 

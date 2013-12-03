@@ -12,10 +12,10 @@
 			{if $samples}
 			{if $courseofferingid == 0}
 
-                <a href="{$WWWROOT}courseoffering/create.php?offset={$offset}" class="btn">Create Course Template</a>
+                <a href="{$WWWROOT}courseoffering/create.php?offset={$offset}" class="btn">Create Course</a>
 			{/if}
 		   {else}
-		   <a href="{$WWWROOT}courseoffering/create.php?coursetemplate={$samplesdes}&offset={$offset}" class="btn">Create Course Template</a>
+		   <a href="{$WWWROOT}courseoffering/create.php?coursetemplate={$samplesdes}&offset={$offset}" class="btn">Create Course</a>
                 
 
 		   {/if}
