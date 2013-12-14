@@ -46,6 +46,7 @@ if (empty($id)) {
         try {
             $view = $USER->get_profile_view();
             $id = $view->get('id');
+			//printf('here');
         }
         catch (ViewNotFoundException $_e) {
             throw new ParameterException("Missing parameter id and couldn't find default user profile view");

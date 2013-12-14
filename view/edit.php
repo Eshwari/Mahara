@@ -228,7 +228,7 @@ if (!($group || $institution)) {
 		
 		}
 		
-		
+		$out =$outcomelist->id; //must
 	}
 	
 	}

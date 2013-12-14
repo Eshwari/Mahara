@@ -132,7 +132,7 @@
 <h4>{str tag="viewssubmittedtoformative" section="view"}</h4>
     <p>
     <table class="fullwidth">
-    {foreach from=$formativeviews2 item=view2}
+    {foreach from=$formativeviews2 item=view}
         <tr class="{cycle values='r0,r1'}">
             <td>		    
 		    {if $subgroup}

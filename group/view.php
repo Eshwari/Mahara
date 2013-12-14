@@ -116,7 +116,7 @@ $subgroup = 0;
 
 //start-Eshwari
 $groupid = param_integer('group',0);
-printf($groupid);
+//printf($groupid);
 $grouprec = get_record('group', 'id',$groupid);
 
 //end-Eshwari
@@ -237,6 +237,7 @@ if($group->outcome){
 	//start-esha
 	}
 	if($group->courseoffering){
+	//printf('here in formative');
 	$smarty->assign('formativeviews2', View::get_formative_courseviews($group->id, $USER->get('id')));
 	//end
 	}
@@ -263,6 +264,8 @@ $commmems = @get_records_sql_array(
 	    AND gm.role != ?',
 	array($group->id, 'member', 'admin','chair')
 );
+
+print_r($commmems);
 	
 $chairmems = @get_records_sql_array(
 	'SELECT member
@@ -271,7 +274,7 @@ $chairmems = @get_records_sql_array(
 	    AND gm.role = ?',
 	array($group->id, 'chair')
 );
-
+print_r($chairmems);
 if($group->outcome){	
 //outcome
 //$summativeViews = View::get_submitted_views_for_outcome($group->id, $group->outcome);
@@ -328,7 +331,9 @@ foreach($viewdata as $view)
 		if($commmems)
 		{
 			$coms=count($commmems);		
+			
 		}
+		
 		if($assessment && count($assessment) == $chairs+$coms)		{			
 			
 			if(count($assessedviews)== (count($assessment)*(count($view_suboutcomes)+1)))
@@ -456,6 +461,25 @@ foreach($viewdata2 as $view2)
 			$smarty->assign('status',1);
 		}		
 }
+//add-eshwari
+$groupinfo = get_record_sql(
+    'SELECT u.role
+       FROM {group_member} u
+	   WHERE u.group=?	
+       AND u.member = ?',
+    array($group->id,$USER->get('id'))
+);
+
+if($groupinfo->role=="chair")
+{
+	if($group->courseoffering){
+	//code to get courseoutcomes
+
+	//end-Eshwari
+	$smarty->assign('finalviews2', View::get_final_views_for_courseoutcome($group->id,$course_lists[$i]));
+	}
+}
+//End-Eshwari
 	}	//for loop    
 //end 
 
@@ -475,6 +499,7 @@ $groupinfo = get_record_sql(
 
 if($groupinfo->role=="chair")
 {
+
 /*$finalviews = @get_records_sql_array(
 	'SELECT *
 	    FROM {view}
@@ -483,9 +508,14 @@ if($groupinfo->role=="chair")
 if($group->outcome){
 $smarty->assign('finalviews', View::get_final_views_for_outcome($group->id,$group->outcome));
 }
+/*
 if($group->courseoffering){
+//code to get courseoutcomes
+
+//end-Eshwari
 $smarty->assign('finalviews2', View::get_final_views_for_courseoutcome($group->id,$course_lists[$i]));
 }
+*/
 }
 
 

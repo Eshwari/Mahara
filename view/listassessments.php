@@ -37,6 +37,7 @@ $viewid = param_integer('id');
 $courseoutcome_id = param_integer('courseoutcome');
 $first = param_integer('first',0);
 $view = get_record('view', 'id', $viewid);
+printf('here');
 
 $group = get_record_sql(
     'SELECT g.id, g.name, g.grouptype, g.courseoutcome, u.role
@@ -46,10 +47,25 @@ $group = get_record_sql(
        WHERE u.member = ?
        AND g.courseoutcome = ?
        AND gt.submittableto = 1',
-    array($USER->get('id'), $courseoutcome_id)
+    array($USER->get('id'),$courseoutcome_id)
 );
-$courseoutcomedes = is_courseoutcome_available($courseoutcome_id);
+printf($group);
+printf('here2');
+/*
+$group = get_record_sql(
+    'SELECT g.id, g.name, g.grouptype, g.courseoutcome, u.role
+       FROM {group_member} u
+       INNER JOIN {group} g ON (u.group = g.id AND g.deleted = 0)
+       INNER JOIN {grouptype} gt ON gt.name = g.grouptype
+       WHERE u.member = ?
 
+       //AND g.courseoutcome = ?
+       AND gt.submittableto = 1',
+    array($USER->get('id'), $courseoutcome_id)
+);*/
+$courseoutcomedes = is_courseoutcome_available($courseoutcome_id);
+printf($courseoutcomedes->id);
+printf('here');
 if(!$courseoutcomedes){
     throw new AccessDeniedException('courseoutcome does not exist');
 }
@@ -84,10 +100,23 @@ $group = get_record_sql(
        INNER JOIN {group} g ON (u.group = g.id AND g.deleted = 0)
        INNER JOIN {grouptype} gt ON gt.name = g.grouptype
        WHERE u.member = ?
+      
+       AND gt.submittableto = 1',
+    array($USER->get('id'))
+);
+/*
+$group = get_record_sql(
+    'SELECT g.id, g.name, g.grouptype, g.courseoutcome, u.role
+       FROM {group_member} u
+       INNER JOIN {group} g ON (u.group = g.id AND g.deleted = 0)
+       INNER JOIN {grouptype} gt ON gt.name = g.grouptype
+       WHERE u.member = ?
+
        AND g.courseoutcome = ?
        AND gt.submittableto = 1',
     array($USER->get('id'), $maincourseoutcome->id)
 );
+*/
 }
 	$tempout = $maincourseoutcome->main_courseoutcome;
 	$maincourseoutcome = "";
@@ -106,7 +135,8 @@ $group = get_record_sql(
 	$maincourseoutcomename = "";
 }
 
-if (!$view || !$group || !$accessview) {
+//if (!$view || !$group || !$accessview) {
+if (!$view || !$accessview) {
     throw new AccessDeniedException(get_string('cantviewassessments', 'view'));
 }
 
@@ -307,7 +337,7 @@ if($issubmitted && $issubmitted->submitted) {
 
 		$outheader['elements']['finalassess'] = array(
 				'type' => 'html',
-				'value' => '<br/><h3 align="center">courseoutcome Assessment </h3>',
+				'value' => '<br/><h3 align="center">Course Outcome Assessment </h3>',
 		);
 		$outheader['elements']['final'] = array(
 				'type' => 'html',

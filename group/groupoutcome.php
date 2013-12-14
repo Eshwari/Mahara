@@ -46,7 +46,7 @@ $group = get_record_sql(
 );
 
 $outname = "";
-
+printf($group->outcome);
 if($group){
 if($group->role != "member"){
 $student = 0;

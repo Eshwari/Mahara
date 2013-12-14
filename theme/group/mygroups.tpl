@@ -1,8 +1,8 @@
 {include file="header.tpl"}
 {if $cancreate}
             <div class="rbuttons">
-                <a href="{$WWWROOT}group/create.php" class="btn" > {str tag="creategroup" section="group"}</a>
-				<a href="{$WWWROOT}group/createcourse.php" class="btn" > {str tag="createcoursegroup" section="group"}</a>
+                <!-- <a href="{$WWWROOT}group/create.php" class="btn" > {str tag="creategroup" section="group"}</a>-->
+				<a href="{$WWWROOT}group/createcourse.php" class="btn" > {str tag="creategroup" section="group"}</a>
                 
 			  </div>
 		    {/if}

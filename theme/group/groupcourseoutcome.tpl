@@ -3,7 +3,7 @@
 		{if $student}
 			<div class="group-info">
 				<ul>
-					<li><label>Final Level against courseoutcome:</label> {$assessments->final_level} </li>
+					<li><label>Final Level against course outcome:</label> {$assessments->final_level} </li>
 					<li><label>Comments:</label> {$assessments->public_comments} </li>
 				</ul>
 			</div>
@@ -12,7 +12,7 @@
 				<div class="group-info">
 					<ul>
 						<li><label>Student Id:</label> {$assessment->username}</li>
-						<li><label>Final Level against courseoutcome:</label> {$assessment->final_level} </li>
+						<li><label>Final Level against course outcome:</label> {$assessment->final_level} </li>
 						<li><label>Comments to Student:</label> {$assessment->public_comments} </li>
 						<li><label>Private Comments to the Committee:</label> {$assessment->private_comments} </li>
 					</ul>

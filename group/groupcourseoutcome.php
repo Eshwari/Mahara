@@ -1,4 +1,3 @@
-incomplete
 <?php
 /**
  * Mahara: Electronic portfolio, weblog, resume builder and social networking
@@ -34,7 +33,8 @@ require_once(get_config('libroot') . 'group.php');
 require_once('pieforms/pieform.php');
 define('GROUP', param_integer('group'));
 $groupid = param_integer('group');
-
+printf('here');
+require_once('courseoutcome.php');
 $group = get_record_sql(
     'SELECT g.id, g.name, g.grouptype, g.courseoffering, u.role
        FROM {group_member} u
@@ -46,10 +46,36 @@ $group = get_record_sql(
     array($USER->get('id'), $groupid)
 );
 
-$outname = "";
+printf('here');
+$courseoutname = "";
 //start-Eshwari
-//end-Eshwari
 
+printf($group->courseoffering);
+$courseofferingdes = get_record('course_offering','id',$group->courseoffering);
+printf($courseofferingdes->coursetmp_id);
+
+$coursetempdes =get_record('course_template', 'id',$courseofferingdes->coursetmp_id);
+		
+		$sampledes =get_courseoutcomes($coursetempdes->id);
+		
+		  $outcomelists= @get_records_sql_array('SELECT  c.id FROM {courseoutcomes} c INNER JOIN {course_template} ct 
+				  ON c.coursetemplate_id = ct.id
+				WHERE c.coursetemplate_id =? ', array($coursetempdes->id)
+				);
+	  $course_lists = array();
+	  $i=0;
+	  foreach($outcomelists as $crstest){
+		
+		$course_lists[$i]=$crstest->id;
+		$i++;
+	} 
+	$max =count($course_lists);
+	for($i= 0; $i < $max; $i++){
+	$courseoutcomedes = get_record('courseoutcomes','id',$course_lists[$i]);
+
+	printf($course_lists[$i]);
+	//}
+	//end-Eshwari
 if($group){
 if($group->role != "member"){
 $student = 0;
@@ -61,7 +87,8 @@ $assessments = @get_records_sql_array(
 	   WHERE v.submittedcourseoutcome = ?
 	   AND o.rubric_no = 0
 	   AND o.submitted = 2',
-    array($group->outcome)
+    //array($group->outcome)
+	array($course_lists[$i])
 );
 
 }else {
@@ -69,27 +96,31 @@ $assessments = @get_records_sql_array(
 	$assessments = get_record_sql(
 		'SELECT o.final_level,o.public_comments
 		   FROM {view} v 
-		   INNER JOIN {outcome_results} o ON (o.view_id = v.id)
+		   INNER JOIN {courseoutcome_results} o ON (o.view_id = v.id)
 		   WHERE v.owner = ? 
-		   AND v.submittedoutcome = ?
+		   AND v.submittedcourseoutcome = ?
 		   AND o.rubric_no = 0
 		   AND o.submitted = 2',
-		array($USER->get('id'),$group->outcome)
+		//array($USER->get('id'),$group->outcome)
+		array($USER->get('id'),$course_lists[$i])
 	);
 }
-$outcomedes = get_record('outcomes','id',$group->outcome);
-if($outcomedes){
-	$outname = $outcomedes->outcome_name. ' Outcome';
+printf('assesment');
+printf($assessments->id);
+//$outcomedes = get_record('outcomes','id',$group->outcome);
+$courseoutcomedes = get_record('courseoutcomes','id',$course_lists[$i]);
+if($courseoutcomedes){
+	$courseoutname = $courseoutcomedes->courseoutcome_name. ' CourseOutcome';
 }
 }
+}//closing for loop for courseoutcomes
 
-
-define('TITLE',$outname);
+define('TITLE',$courseoutname);
 $smarty = smarty();
 $smarty->assign('PAGEHEADING', hsc(TITLE));
 $smarty->assign('assessments',$assessments);
 $smarty->assign('student',$student);
-$smarty->display('group/groupoutcome.tpl');
+$smarty->display('group/groupcourseoutcome.tpl');
 
 
 ?>
